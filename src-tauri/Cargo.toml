@@ -19,4 +19,10 @@ tauri = { version = "2.0.0-rc", features = [] }
 tauri-plugin-shell = "2.0.0-rc"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+tokio = { version = "1", features = ["full"] }
+axum = "0.7.6"
+hyper = { version = "1.4.1", features = ["full"] }
+tower = "0.5.1"
+tracing = "0.1.40"
+hyper-util = "0.1.8"
