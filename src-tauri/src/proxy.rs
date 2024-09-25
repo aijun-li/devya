@@ -10,17 +10,22 @@ use axum::{
 };
 use hyper::{body::Incoming, server::conn::http1, upgrade::Upgraded, StatusCode};
 use hyper_util::rt::TokioIo;
+use tauri::ipc::Channel;
 use tokio::net::{TcpListener, TcpStream};
 use tower::ServiceExt;
 
-pub async fn start_proxy() {
+pub async fn start_proxy(on_event: Channel<String>) {
     let router_service = Router::new().route("/", get(|| async { "Welcome to Devya" }));
 
     let hyper_service = hyper::service::service_fn(move |req: Request<Incoming>| {
         let router_service = router_service.clone();
+        let channel = on_event.clone();
         let req = req.map(Body::new);
         async move {
             if req.method() == Method::CONNECT {
+                channel
+                    .send(format!("{:?}: {}", req.version(), req.uri()))
+                    .unwrap();
                 proxy(req).await
             } else {
                 router_service
