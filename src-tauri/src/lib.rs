@@ -1,3 +1,6 @@
+use pingora::start_proxy;
+
+pub mod pingora;
 pub mod proxy;
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
@@ -9,6 +12,12 @@ fn greet(name: &str) -> String {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .setup(|_app| {
+            tokio::task::spawn_blocking(|| {
+                start_proxy();
+            });
+            Ok(())
+        })
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![greet])
         .run(tauri::generate_context!())

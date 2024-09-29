@@ -26,3 +26,4 @@ hyper = { version = "1.4.1", features = ["full"] }
 tower = "0.5.1"
 tracing = "0.1.40"
 hyper-util = "0.1.8"
+pingora = { version = "0.3.0", features = ["proxy"] }
