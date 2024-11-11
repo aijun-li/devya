@@ -1,17 +1,15 @@
 mod cert;
-mod proxy;
+pub mod proxy;
 
 use cert::{make_root_cert, read_root_cert};
 use home::home_dir;
 use proxy::{start_proxy, ProxyConfig, RequestHandler};
 use tokio::{fs, join};
 
-#[derive(Clone)]
-struct MyHandler {}
-
-impl RequestHandler for MyHandler {}
-
-pub async fn init() {
+pub async fn init<T>(port: u16, handler: T)
+where
+    T: RequestHandler + Send + Sync + Clone + 'static,
+{
     let home = home_dir().expect("Failed to get home path");
 
     let cert_dir = home.join(".devya/certs");
@@ -31,10 +29,10 @@ pub async fn init() {
 
     start_proxy(
         ProxyConfig {
-            port: 7777,
+            port,
             root_cert: Some(root_cert),
         },
-        MyHandler {},
+        handler,
     )
     .await
 }
