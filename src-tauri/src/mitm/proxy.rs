@@ -62,7 +62,7 @@ where
 
                     let res = handler.handle_response(res, request_id).await;
 
-                    tracing::info!("{} -> {}", uri, res.status());
+                    tracing::debug!("{} -> {}", uri, res.status());
 
                     // You can modify response here
 
