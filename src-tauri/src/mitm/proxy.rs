@@ -1,15 +1,27 @@
+use std::sync::atomic::AtomicUsize;
+
 use async_trait::async_trait;
 use http_mitm_proxy::{DefaultClient, MitmProxy};
 use hyper::service::service_fn;
 use moka::sync::Cache;
 
+static REQUEST_ID: AtomicUsize = AtomicUsize::new(1);
+
 #[async_trait]
 pub trait RequestHandler {
-    async fn handle_request<T: Send>(&self, req: hyper::Request<T>) -> hyper::Request<T> {
+    async fn handle_request<T: Send>(
+        &self,
+        req: hyper::Request<T>,
+        _id: usize,
+    ) -> hyper::Request<T> {
         req
     }
 
-    async fn handle_response<T: Send>(&self, res: hyper::Response<T>) -> hyper::Response<T> {
+    async fn handle_response<T: Send>(
+        &self,
+        res: hyper::Response<T>,
+        _id: usize,
+    ) -> hyper::Response<T> {
         res
     }
 }
@@ -42,11 +54,13 @@ where
                     // You can modify request here
                     // or You can just return response anywhere
 
-                    let req = handler.handle_request(req).await;
+                    let request_id = REQUEST_ID.fetch_add(1, std::sync::atomic::Ordering::Release);
+
+                    let req = handler.handle_request(req, request_id).await;
 
                     let (res, _upgrade) = client.send_request(req).await?;
 
-                    let res = handler.handle_response(res).await;
+                    let res = handler.handle_response(res, request_id).await;
 
                     tracing::info!("{} -> {}", uri, res.status());
 

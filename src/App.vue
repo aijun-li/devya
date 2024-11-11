@@ -4,15 +4,23 @@ import { invoke, Channel } from "@tauri-apps/api/core";
 import { emit } from "@tauri-apps/api/event";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Captured, CapturedType } from '@/types/command'
 
 const port = ref(7777);
 const proxyOn = ref(false);
 
-const list = ref<string[]>([]);
+const list = ref<Captured[]>([]);
 
-const channel = new Channel<string>();
+const channel = new Channel<Captured>();
 channel.onmessage = (message) => {
-  list.value.push(message);
+  if (message.type === CapturedType.Request) {
+    list.value.push(message);
+  } else {
+    const target = list.value.find(item => item.id === message.id);
+    if (target) {
+      target.content += ` -> ${message.content}`
+    }
+  }
 };
 
 async function startProxy() {
@@ -46,7 +54,7 @@ async function toggleProxy() {
       </Button>
     </div>
     <ul class="flex-1 overflow-auto list-disc list-inside">
-      <li v-for="item in list" :key="item">{{ item }}</li>
+      <li v-for="item in list" :key="item.id">{{ item.content }}</li>
     </ul>
   </div>
 </template>
