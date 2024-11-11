@@ -1,0 +1,6 @@
+echo "============ Check Frontend ============"
+npx lint-staged --verbose
+echo "============ Check Tauri ============"
+cd src-tauri && cargo fmt --check
+echo "Pass"
+echo "============ Check Done ============"
