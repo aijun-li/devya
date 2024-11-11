@@ -22,7 +22,7 @@ tauri = { version = "2", features = [] }
 tauri-plugin-shell = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-http-mitm-proxy = "0.10.0"
+http-mitm-proxy = "0.11.0"
 tokio = { version = "1.41.1", features = ["full"] }
 rcgen = { version = "0.13.1", features = ["x509-parser"] }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
@@ -31,4 +31,3 @@ hyper = "1.5.0"
 home = "0.5.9"
 async-trait = "0.1.83"
 tracing = "0.1.40"
-

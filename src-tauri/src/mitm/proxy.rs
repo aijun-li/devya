@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use http_mitm_proxy::{DefaultClient, MitmProxy};
+use hyper::service::service_fn;
 use moka::sync::Cache;
 
 #[async_trait]
@@ -30,28 +31,31 @@ where
 
     let client = DefaultClient::new().unwrap();
     let server = proxy
-        .bind(("127.0.0.1", config.port), move |_client_addr, req| {
-            let client = client.clone();
-            let handler = handler.clone();
-            async move {
-                let uri = req.uri().clone();
+        .bind(
+            ("127.0.0.1", config.port),
+            service_fn(move |req| {
+                let client = client.clone();
+                let handler = handler.clone();
+                async move {
+                    let uri = req.uri().clone();
 
-                // You can modify request here
-                // or You can just return response anywhere
+                    // You can modify request here
+                    // or You can just return response anywhere
 
-                let req = handler.handle_request(req).await;
+                    let req = handler.handle_request(req).await;
 
-                let (res, _upgrade) = client.send_request(req).await?;
+                    let (res, _upgrade) = client.send_request(req).await?;
 
-                let res = handler.handle_response(res).await;
+                    let res = handler.handle_response(res).await;
 
-                tracing::info!("{} -> {}", uri, res.status());
+                    tracing::info!("{} -> {}", uri, res.status());
 
-                // You can modify response here
+                    // You can modify response here
 
-                Ok::<_, http_mitm_proxy::default_client::Error>(res)
-            }
-        })
+                    Ok::<_, http_mitm_proxy::default_client::Error>(res)
+                }
+            }),
+        )
         .await
         .unwrap();
 
