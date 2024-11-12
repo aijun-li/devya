@@ -2,9 +2,12 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use serde::Serialize;
-use tauri::{ipc::Channel, AppHandle, Listener};
+use tauri::{ipc::Channel, State};
 
-use crate::mitm::{self, proxy::RequestHandler};
+use crate::{
+    mitm::{self, proxy::RequestHandler},
+    state::AppState,
+};
 
 #[derive(Clone, Serialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
@@ -50,7 +53,11 @@ impl RequestHandler for MyHandler {
 }
 
 #[tauri::command]
-pub async fn start_proxy(app: AppHandle, channel: Channel<Captured>, port: Option<u16>) {
+pub async fn start_proxy(
+    channel: Channel<Captured>,
+    port: Option<u16>,
+    state: State<'_, AppState>,
+) -> Result<(), ()> {
     let handler = tokio::spawn(mitm::init(
         port.unwrap_or(7777),
         MyHandler {
@@ -58,10 +65,19 @@ pub async fn start_proxy(app: AppHandle, channel: Channel<Captured>, port: Optio
         },
     ));
 
-    // handler.abort();
+    // TODO: error handling
+    *state.proxy_handle.lock().unwrap() = Some(handler);
 
-    app.once("stop_proxy", move |_| {
-        tracing::info!("HTTP Proxy is stopped");
-        handler.abort();
-    });
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn stop_proxy(state: State<'_, AppState>) -> Result<(), ()> {
+    if let Some(handle) = state.proxy_handle.lock().unwrap().take() {
+        handle.abort();
+    }
+
+    tracing::info!("HTTP Proxy is stopped");
+
+    Ok(())
 }

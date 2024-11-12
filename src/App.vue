@@ -3,8 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Captured, CapturedType } from '@/types/command';
 import { Channel, invoke } from '@tauri-apps/api/core';
-import { emit } from '@tauri-apps/api/event';
 import { ref } from 'vue';
+import { TauriCommand } from './const/tauri-event';
 
 const port = ref(7777);
 const proxyOn = ref(false);
@@ -24,14 +24,14 @@ channel.onmessage = (message) => {
 };
 
 async function startProxy() {
-  await invoke('start_proxy', {
+  await invoke(TauriCommand.StartProxy, {
     channel,
   });
   proxyOn.value = true;
 }
 
 async function stopProxy() {
-  await emit('stop_proxy');
+  await invoke(TauriCommand.StopProxy);
   proxyOn.value = false;
   list.value.length = 0;
 }
@@ -53,8 +53,8 @@ async function toggleProxy() {
         {{ proxyOn ? 'Stop Proxy' : 'Start Proxy' }}
       </Button>
     </div>
-    <ul class="flex-1 overflow-auto list-disc list-inside">
-      <li v-for="item in list" :key="item.id">{{ item.content }}</li>
+    <ul class="flex-1 overflow-auto list-disc list-inside pr-4 -mr-4">
+      <li v-for="item in list" :key="item.id" class="break-all">{{ item.content }}</li>
     </ul>
   </div>
 </template>
