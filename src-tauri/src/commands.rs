@@ -4,6 +4,8 @@ use async_trait::async_trait;
 use serde::Serialize;
 use tauri::{ipc::Channel, State};
 
+use home::home_dir;
+
 use crate::{
     mitm::{self, proxy::RequestHandler},
     state::AppState,
@@ -78,6 +80,16 @@ pub async fn stop_proxy(state: State<'_, AppState>) -> Result<(), ()> {
     }
 
     tracing::info!("HTTP Proxy is stopped");
+
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn install_cert() -> Result<(), ()> {
+    let home = home_dir().expect("Failed to get home path");
+    let cert_dir = home.join(".devya/certs");
+
+    mitm::cert::install_cert(&cert_dir).await;
 
     Ok(())
 }

@@ -43,12 +43,17 @@ async function toggleProxy() {
     await startProxy();
   }
 }
+
+async function installCert() {
+  await invoke(TauriCommand.InstallCert);
+}
 </script>
 
 <template>
   <div class="w-screen h-screen p-4 flex flex-col gap-4">
     <div class="flex gap-4">
       <Input v-model="port" placeholder="Port" disabled />
+      <Button @click="installCert">Install Cert</Button>
       <Button :variant="proxyOn ? 'destructive' : 'default'" @click="toggleProxy">
         {{ proxyOn ? 'Stop Proxy' : 'Start Proxy' }}
       </Button>

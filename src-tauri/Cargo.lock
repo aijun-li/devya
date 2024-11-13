@@ -751,6 +751,7 @@ dependencies = [
  "home",
  "http-mitm-proxy",
  "hyper",
+ "lazy_static",
  "moka",
  "rcgen",
  "serde",
