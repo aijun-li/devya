@@ -85,11 +85,11 @@ pub async fn stop_proxy(state: State<'_, AppState>) -> Result<(), ()> {
 }
 
 #[tauri::command]
-pub async fn install_cert() -> Result<(), ()> {
+pub async fn install_cert() -> Result<(), String> {
     let home = home_dir().expect("Failed to get home path");
     let cert_dir = home.join(".devya/certs");
 
-    mitm::cert::install_cert(&cert_dir).await;
+    mitm::cert::install_cert(&cert_dir).await?;
 
     Ok(())
 }

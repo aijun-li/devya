@@ -4,7 +4,10 @@ import { Input } from '@/components/ui/input';
 import { Captured, CapturedType } from '@/types/command';
 import { Channel, invoke } from '@tauri-apps/api/core';
 import { ref } from 'vue';
+import { toast } from 'vue-sonner';
+import { Toaster } from './components/ui/sonner';
 import { TauriCommand } from './const/tauri-event';
+import { handleError } from './utils/error';
 
 const port = ref(7777);
 const proxyOn = ref(false);
@@ -45,7 +48,11 @@ async function toggleProxy() {
 }
 
 async function installCert() {
-  await invoke(TauriCommand.InstallCert);
+  toast.promise(invoke(TauriCommand.InstallCert), {
+    loading: 'Installing...',
+    success: 'Certificate Installed',
+    error: handleError,
+  });
 }
 </script>
 
@@ -62,4 +69,6 @@ async function installCert() {
       <li v-for="item in list" :key="item.id" class="break-all">{{ item.content }}</li>
     </ul>
   </div>
+
+  <Toaster />
 </template>

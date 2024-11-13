@@ -73,10 +73,14 @@ pub fn read_root_cert<T: AsRef<Path>>(cert_pair: &(T, T)) -> rcgen::CertifiedKey
     rcgen::CertifiedKey { cert, key_pair }
 }
 
-pub async fn install_cert<T: AsRef<Path>>(dir_path: &T) {
+pub async fn install_cert<T: AsRef<Path>>(dir_path: &T) -> Result<(), String> {
     if !detect_cert(dir_path).await {
         make_root_cert(dir_path).await;
     }
+
+    let cert_path = dir_path.as_ref().join(CERT_NAME).display().to_string();
+
+    let error_message = String::from("Failed to install cert");
 
     if cfg!(target_os = "macos") {
         let default_keychain = String::from_utf8_lossy(
@@ -90,14 +94,36 @@ pub async fn install_cert<T: AsRef<Path>>(dir_path: &T) {
         .to_string()
         .replace(r#"""#, "");
 
-        let cert_path = dir_path.as_ref().join(CERT_NAME).display().to_string();
-
-        Command::new("security")
+        if Command::new("security")
             .arg("add-trusted-cert")
             .arg("-k")
             .arg(default_keychain)
             .arg(cert_path)
-            .spawn()
-            .unwrap();
+            .output()
+            .map_err(|_| error_message.clone())?
+            .status
+            .success()
+        {
+            Ok(())
+        } else {
+            Err(error_message.clone())
+        }
+    } else if cfg!(target_os = "windows") {
+        if Command::new("certutil")
+            .arg("-addstore")
+            .arg("-user")
+            .arg("Root")
+            .arg(cert_path)
+            .output()
+            .map_err(|_| error_message.clone())?
+            .status
+            .success()
+        {
+            Ok(())
+        } else {
+            Err(error_message.clone())
+        }
+    } else {
+        Err(String::from("Unsupported platform"))
     }
 }
