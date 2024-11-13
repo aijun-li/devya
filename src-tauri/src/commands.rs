@@ -9,6 +9,7 @@ use home::home_dir;
 use crate::{
     mitm::{self, proxy::RequestHandler},
     state::AppState,
+    util::is_port_free,
 };
 
 #[derive(Clone, Serialize)]
@@ -92,4 +93,9 @@ pub async fn install_cert() -> Result<(), String> {
     mitm::cert::install_cert(&cert_dir).await?;
 
     Ok(())
+}
+
+#[tauri::command]
+pub fn check_port(port: u16) -> bool {
+    is_port_free(port)
 }
