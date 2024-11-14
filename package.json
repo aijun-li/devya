@@ -11,13 +11,13 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@icon-park/vue-next": "^1.4.2",
     "@radix-icons/vue": "^1.0.0",
     "@tauri-apps/api": "^2.1.0",
     "@tauri-apps/plugin-shell": "^2.0.1",
     "@vueuse/core": "^11.2.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "lucide-vue-next": "^0.456.0",
     "radix-vue": "^1.9.9",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",

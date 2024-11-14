@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
 import { Captured, CapturedType } from '@/types/command';
-import { Certificate, Write } from '@icon-park/vue-next';
 import { Channel, invoke } from '@tauri-apps/api/core';
+import { Pencil, ShieldPlus } from 'lucide-vue-next';
 import { ref } from 'vue';
 import { toast } from 'vue-sonner';
-import { PinInput, PinInputGroup, PinInputInput } from './components/ui/pin-input';
+import PortInput from './components/PortInput.vue';
 import { Popover, PopoverContent, PopoverTrigger } from './components/ui/popover';
 import { Toaster } from './components/ui/sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './components/ui/tooltip';
@@ -17,7 +17,25 @@ const proxyOn = ref(false);
 
 const list = ref<Captured[]>([]);
 
-const newPort = ref([]);
+const newPort = ref(port.value);
+async function onPortChange(open: boolean) {
+  if (open) {
+    newPort.value = port.value;
+  } else {
+    const available = await invoke<boolean>(TauriCommand.CheckPort, { port: newPort.value });
+    if (!available || newPort.value === port.value) {
+      return;
+    }
+    if (proxyOn.value) {
+      await invoke(TauriCommand.StopProxy);
+      await invoke(TauriCommand.StartProxy, {
+        port: newPort.value,
+        channel,
+      });
+    }
+    port.value = newPort.value;
+  }
+}
 
 const channel = new Channel<Captured>();
 channel.onmessage = (message) => {
@@ -33,6 +51,7 @@ channel.onmessage = (message) => {
 
 async function startProxy() {
   await invoke(TauriCommand.StartProxy, {
+    port: port.value,
     channel,
   });
   proxyOn.value = true;
@@ -70,28 +89,24 @@ async function installCert() {
 
           <div class="flex-1">Proxying on 127.0.0.1:{{ port }}</div>
 
-          <div class="flex gap-2">
-            <Popover>
+          <div class="flex gap-1">
+            <Popover @update:open="onPortChange">
               <PopoverTrigger>
                 <Tooltip>
                   <TooltipTrigger class="config-button">
-                    <Write size="14" />
+                    <Pencil :size="14" />
                   </TooltipTrigger>
                   <TooltipContent>Modify Port</TooltipContent>
                 </Tooltip>
               </PopoverTrigger>
               <PopoverContent class="w-fit">
-                <PinInput v-model="newPort" type="number">
-                  <PinInputGroup>
-                    <PinInputInput v-for="(id, index) in 5" :key="id" :index="index" />
-                  </PinInputGroup>
-                </PinInput>
+                <PortInput v-model="newPort" />
               </PopoverContent>
             </Popover>
 
             <Tooltip>
               <TooltipTrigger class="config-button" @click="installCert">
-                <Certificate size="14" />
+                <ShieldPlus :size="14" />
               </TooltipTrigger>
               <TooltipContent>Install Certificate</TooltipContent>
             </Tooltip>
