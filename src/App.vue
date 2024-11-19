@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
-import { Captured, CapturedType } from '@/types/command';
-import { Channel, invoke } from '@tauri-apps/api/core';
+import { commands } from '@/ipc';
+import { Captured, CapturedType } from '@/ipc/commands/types';
+import { Channel } from '@tauri-apps/api/core';
 import { Pencil, ShieldPlus } from 'lucide-vue-next';
 import { ref } from 'vue';
 import { toast } from 'vue-sonner';
@@ -9,7 +10,6 @@ import PortInput from './components/PortInput.vue';
 import { Popover, PopoverContent, PopoverTrigger } from './components/ui/popover';
 import { Toaster } from './components/ui/sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './components/ui/tooltip';
-import { TauriCommand } from './const/tauri-event';
 import { handleError } from './utils/error';
 
 const port = ref(7777);
@@ -22,13 +22,13 @@ async function onPortChange(open: boolean) {
   if (open) {
     newPort.value = port.value;
   } else {
-    const available = await invoke<boolean>(TauriCommand.CheckPort, { port: newPort.value });
+    const available = await commands.checkPort({ port: newPort.value });
     if (!available || newPort.value === port.value) {
       return;
     }
     if (proxyOn.value) {
-      await invoke(TauriCommand.StopProxy);
-      await invoke(TauriCommand.StartProxy, {
+      await commands.stopProxy();
+      await commands.startProxy({
         port: newPort.value,
         channel,
       });
@@ -50,7 +50,7 @@ channel.onmessage = (message) => {
 };
 
 async function startProxy() {
-  await invoke(TauriCommand.StartProxy, {
+  await commands.startProxy({
     port: port.value,
     channel,
   });
@@ -58,7 +58,7 @@ async function startProxy() {
 }
 
 async function stopProxy() {
-  await invoke(TauriCommand.StopProxy);
+  await commands.stopProxy();
   proxyOn.value = false;
   list.value.length = 0;
 }
@@ -72,7 +72,7 @@ async function toggleProxy() {
 }
 
 async function installCert() {
-  toast.promise(invoke(TauriCommand.InstallCert), {
+  toast.promise(commands.installCert(), {
     loading: 'Installing...',
     success: 'Certificate Installed',
     error: handleError,

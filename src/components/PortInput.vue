@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { TauriCommand } from '@/const/tauri-event';
-import { invoke } from '@tauri-apps/api/core';
+import { commands } from '@/ipc';
 import { ref } from 'vue';
 import { Label } from './ui/label';
 import { NumberField, NumberFieldContent, NumberFieldInput } from './ui/number-field';
@@ -10,7 +9,7 @@ const model = defineModel<number>({ required: true });
 const portAvailable = ref(true);
 
 async function onPortChange(port: number) {
-  portAvailable.value = await invoke<boolean>(TauriCommand.CheckPort, {
+  portAvailable.value = await commands.checkPort({
     port,
   });
 }
