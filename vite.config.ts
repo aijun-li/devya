@@ -1,4 +1,5 @@
 import vue from '@vitejs/plugin-vue';
+import VueRouter from 'unplugin-vue-router';
 import { fileURLToPath } from 'url';
 import { defineConfig } from 'vite';
 
@@ -7,7 +8,7 @@ const host = process.env.TAURI_DEV_HOST;
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
-  plugins: [vue()],
+  plugins: [VueRouter.vite({}), vue()],
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
