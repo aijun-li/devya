@@ -18,6 +18,9 @@ export default [
       parserOptions: {
         parser: tseslint.parser,
       },
+      globals: {
+        definePage: 'readonly',
+      },
     },
   },
   {

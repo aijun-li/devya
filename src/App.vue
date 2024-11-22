@@ -1,22 +1,24 @@
 <script setup lang="ts">
 import AppSidebar from './components/AppSidebar.vue';
-import { SidebarProvider, SidebarTrigger } from './components/ui/sidebar';
 import { Toaster } from './components/ui/sonner';
 import { TooltipProvider } from './components/ui/tooltip';
+import { useNetworkStore } from './stores/network';
+import { handleError } from './utils/error';
+
+const { port, startProxy } = useNetworkStore();
+
+startProxy({ port: port.value }).catch(handleError);
 </script>
 
 <template>
   <TooltipProvider :delay-duration="500">
-    <SidebarProvider>
-      <div class="w-screen h-screen flex">
-        <AppSidebar />
+    <div class="flex h-screen w-screen bg-gray-100 pb-2 pr-2">
+      <AppSidebar />
 
-        <main class="flex-1">
-          <SidebarTrigger />
-          <RouterView />
-        </main>
-      </div>
-    </SidebarProvider>
+      <main class="min-w-0 flex-1">
+        <RouterView />
+      </main>
+    </div>
 
     <Toaster />
   </TooltipProvider>

@@ -23,11 +23,11 @@ async function onPortChange(port: number) {
     :format-options="{ useGrouping: false }"
     @update:model-value="onPortChange"
   >
-    <Label class="font-bold text-xs">Port: 1024 - 65535</Label>
+    <Label class="text-xs font-bold">Port: 1024 - 65535</Label>
     <NumberFieldContent>
       <NumberFieldInput />
     </NumberFieldContent>
   </NumberField>
 
-  <div v-if="!portAvailable" class="text-red-500 text-xs mt-1">Port not available</div>
+  <div v-if="!portAvailable" class="mt-1 text-xs text-red-500">Port not available</div>
 </template>

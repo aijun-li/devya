@@ -1,3 +1,7 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import ContentCard from '@/components/ContentCard.vue';
+</script>
 
-<template>Rules</template>
+<template>
+  <ContentCard></ContentCard>
+</template>

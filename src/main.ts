@@ -1,3 +1,4 @@
+import { createPinia } from 'pinia';
 import { createApp } from 'vue';
 import { createRouter, createWebHashHistory } from 'vue-router';
 import { routes } from 'vue-router/auto-routes';
@@ -9,4 +10,6 @@ const router = createRouter({
   routes,
 });
 
-createApp(App).use(router).mount('#app');
+const pinia = createPinia();
+
+createApp(App).use(router).use(pinia).mount('#app');
