@@ -24,13 +24,13 @@ const list = computed(() =>
 </script>
 
 <template>
-  <ContentCard>
-    <Table>
-      <TableHeader class="sticky top-0">
-        <TableRow>
-          <TableHead>Status</TableHead>
-          <TableHead>Protocol</TableHead>
-          <TableHead>Hostname</TableHead>
+  <ContentCard class="relative" content-class="pt-2" :with-scroll="false">
+    <Table class="table-fixed" wrapper-class="h-full">
+      <TableHeader>
+        <TableRow class="sticky top-0 border-none bg-white [&_th]:shadow-[inset_0_-1px_hsl(var(--border))]">
+          <TableHead class="w-16">Status</TableHead>
+          <TableHead class="w-20">Protocol</TableHead>
+          <TableHead class="w-64">Hostname</TableHead>
           <TableHead>Pathname</TableHead>
         </TableRow>
       </TableHeader>
@@ -38,8 +38,8 @@ const list = computed(() =>
         <TableRow v-for="item in list" :key="item.id">
           <TableCell>{{ item.status }}</TableCell>
           <TableCell>{{ item.protocol }}</TableCell>
-          <TableCell>{{ item.hostname }}</TableCell>
-          <TableCell>{{ item.pathname }}</TableCell>
+          <TableCell class="truncate">{{ item.hostname }}</TableCell>
+          <TableCell class="truncate">{{ item.pathname }}</TableCell>
         </TableRow>
       </TableBody>
     </Table>

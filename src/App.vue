@@ -5,9 +5,18 @@ import { TooltipProvider } from './components/ui/tooltip';
 import { useNetworkStore } from './stores/network';
 import { handleError } from './utils/error';
 
-const { port, startProxy } = useNetworkStore();
+const { port, startProxy, stopProxy } = useNetworkStore();
 
-startProxy({ port: port.value }).catch(handleError);
+async function initProxy() {
+  try {
+    await stopProxy();
+    await startProxy({ port: port.value });
+  } catch (error) {
+    handleError(error);
+  }
+}
+
+initProxy();
 </script>
 
 <template>

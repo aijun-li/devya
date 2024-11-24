@@ -2,6 +2,13 @@
 import { ScrollArea } from './ui/scroll-area';
 import { Separator } from './ui/separator';
 
+interface Props {
+  withScroll?: boolean;
+  contentClass?: string;
+}
+
+const { withScroll = true } = defineProps<Props>();
+
 const slots = defineSlots<{ default: () => unknown; header?: () => unknown }>();
 </script>
 
@@ -14,8 +21,11 @@ const slots = defineSlots<{ default: () => unknown; header?: () => unknown }>();
       <Separator />
     </template>
 
-    <ScrollArea class="flex-1 p-4">
+    <ScrollArea v-if="withScroll" class="flex-1 p-4" :class="contentClass">
       <slot />
     </ScrollArea>
+    <div v-else class="min-h-0 flex-1 p-4" :class="contentClass">
+      <slot />
+    </div>
   </div>
 </template>
