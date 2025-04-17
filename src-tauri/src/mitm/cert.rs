@@ -1,13 +1,18 @@
-use std::{path::Path, process::Command};
+use std::{path::Path, process::Command, vec};
 
 use anyhow::anyhow;
 use rcgen::{
-    BasicConstraints, Certificate, CertificateParams, DistinguishedName, DnType, IsCa, KeyPair,
-    KeyUsagePurpose,
+    BasicConstraints, Certificate, CertificateParams, DistinguishedName, DnType,
+    ExtendedKeyUsagePurpose, IsCa, KeyPair, KeyUsagePurpose,
 };
 use tokio::fs;
 
 pub struct RootCert {
+    pub cert: Certificate,
+    pub key_pair: KeyPair,
+}
+
+pub struct SignedCert {
     pub cert: Certificate,
     pub key_pair: KeyPair,
 }
@@ -111,5 +116,25 @@ impl RootCert {
         fs::write(key_path, self.key_pair.serialize_pem()).await?;
 
         anyhow::Ok(())
+    }
+
+    pub fn sign(&self, host: &str) -> anyhow::Result<SignedCert> {
+        let mut params = CertificateParams::new(vec![host.to_string()])?;
+
+        // 设置证书参数
+        params.distinguished_name.push(DnType::CommonName, host);
+        params.key_usages.push(KeyUsagePurpose::DigitalSignature);
+        params
+            .extended_key_usages
+            .push(ExtendedKeyUsagePurpose::ServerAuth);
+        params.is_ca = IsCa::NoCa;
+
+        // 生成新密钥对
+        let key_pair = KeyPair::generate()?;
+
+        // 用根证书签发
+        let cert = params.signed_by(&key_pair, &self.cert, &self.key_pair)?;
+
+        anyhow::Ok(SignedCert { cert, key_pair })
     }
 }
