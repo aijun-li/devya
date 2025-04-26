@@ -7,7 +7,7 @@ use rcgen::{
 };
 use tokio::fs;
 
-pub struct RootCert {
+pub struct RootCA {
     pub cert: Certificate,
     pub key_pair: KeyPair,
 }
@@ -20,7 +20,7 @@ pub struct SignedCert {
 const CERT_NAME: &str = "ca.crt";
 const KEY_PAIR_NAME: &str = "ca.key";
 
-impl RootCert {
+impl RootCA {
     pub fn new(name: &str) -> anyhow::Result<Self> {
         let mut params = CertificateParams::default();
 
