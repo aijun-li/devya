@@ -866,9 +866,11 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-opener",
  "tokio",
+ "tokio-rustls",
  "tracing",
  "tracing-subscriber",
  "trait-variant",
+ "webpki-roots",
 ]
 
 [[package]]

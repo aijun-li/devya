@@ -12,7 +12,12 @@ use hyper::{
     Method, Request, Response, StatusCode, Uri,
 };
 use hyper_util::rt::TokioIo;
+use rustls::{
+    pki_types::{CertificateDer, PrivateKeyDer},
+    ClientConfig, RootCertStore, ServerConfig,
+};
 use tokio::net::{TcpListener, TcpStream, ToSocketAddrs};
+use tokio_rustls::{TlsAcceptor, TlsConnector};
 use tracing::{error, info, warn};
 
 pub type Body = BoxBody<Bytes, anyhow::Error>;
@@ -84,10 +89,7 @@ impl<H: HttpHandler + Send + Sync + 'static> MitmProxy<H> {
         }
     }
 
-    async fn handle_http(
-        self: Arc<Self>,
-        req: Request<Body>,
-    ) -> Result<Response<Body>, anyhow::Error> {
+    async fn handle_http(self: Arc<Self>, req: Request<Body>) -> anyhow::Result<Response<Body>> {
         let req_or_resp = if let Some(handler) = &self.handler {
             match handler.handle_request(req).await {
                 Ok(r) => r,
@@ -169,16 +171,25 @@ impl<H: HttpHandler + Send + Sync + 'static> MitmProxy<H> {
         Ok(final_res)
     }
 
-    async fn handle_connect(
-        self: Arc<Self>,
-        req: Request<Body>,
-    ) -> Result<Response<Body>, anyhow::Error> {
+    async fn handle_connect(self: Arc<Self>, req: Request<Body>) -> anyhow::Result<Response<Body>> {
+        let host = req
+            .uri()
+            .host()
+            .ok_or_else(|| anyhow!("CONNECT request has no host"))?
+            .to_string();
+
         if let Some(addr) = host_addr(req.uri()) {
             tokio::spawn(async move {
                 match hyper::upgrade::on(req).await {
                     Ok(upgraded) => {
-                        if let Err(e) = tunnel(upgraded, addr).await {
-                            error!("Failed to tunnel: {}", e);
+                        if self.root_cert.is_none() {
+                            if let Err(e) = tunnel(upgraded, addr).await {
+                                error!("Failed to tunnel: {}", e);
+                            }
+                        } else {
+                            if let Err(e) = self.handle_tls(upgraded, addr, host).await {
+                                error!("Failed to handle TLS: {}", e);
+                            }
                         }
                     }
                     Err(e) => error!("Failed to upgrade: {}", e),
@@ -193,6 +204,69 @@ impl<H: HttpHandler + Send + Sync + 'static> MitmProxy<H> {
                 .unwrap();
             Ok(resp)
         }
+    }
+
+    async fn handle_tls(
+        self: Arc<Self>,
+        upgraded: Upgraded,
+        target_addr: String,
+        host_for_cert: String,
+    ) -> anyhow::Result<()> {
+        info!("Initiating TLS interception for {}", target_addr);
+
+        let root_ca = self
+            .root_cert
+            .as_ref()
+            .ok_or_else(|| anyhow!("No root CA"))?;
+        let signed_cert = root_ca.sign(&host_for_cert)?;
+
+        let server_cert = CertificateDer::from(signed_cert.cert.der().as_ref().to_owned());
+        let server_key = PrivateKeyDer::Pkcs8(signed_cert.key_pair.serialize_der().into());
+
+        let server_config = ServerConfig::builder()
+            .with_no_client_auth()
+            .with_single_cert(vec![server_cert.clone()], server_key)?;
+        let acceptor = TlsAcceptor::from(Arc::new(server_config));
+
+        let client_io = TokioIo::new(upgraded);
+        let client_tls_stream = acceptor.accept(client_io).await?;
+        info!("Client TLS handshake successful for {}", host_for_cert);
+
+        let root_cert_store = RootCertStore {
+            roots: webpki_roots::TLS_SERVER_ROOTS.to_vec(),
+        };
+        let client_config = ClientConfig::builder()
+            .with_root_certificates(root_cert_store)
+            .with_no_client_auth();
+        let connector = TlsConnector::from(Arc::new(client_config));
+
+        let server_tcp_stream = TcpStream::connect(&target_addr).await?;
+
+        let server_name = host_for_cert.clone().try_into()?;
+        let server_tls_stream = connector.connect(server_name, server_tcp_stream).await?;
+        info!("Server TLS handshake successful for {}", host_for_cert);
+
+        let (mut client_reader, mut client_writer) = tokio::io::split(client_tls_stream);
+        let (mut server_reader, mut server_writer) = tokio::io::split(server_tls_stream);
+
+        let client_to_server = tokio::io::copy(&mut client_reader, &mut server_writer);
+        let server_to_client = tokio::io::copy(&mut server_reader, &mut client_writer);
+
+        tokio::select! {
+            result = client_to_server => {
+                if let Err(e) = result {
+                    warn!("Error copying client to server: {}", e);
+                }
+            },
+            result = server_to_client => {
+                if let Err(e) = result {
+                    warn!("Error copying server to client: {}", e);
+                }
+            }
+        }
+
+        info!("TLS tunnel closed for {}", target_addr);
+        Ok(())
     }
 }
 
