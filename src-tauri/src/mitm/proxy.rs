@@ -241,31 +241,138 @@ impl<H: HttpHandler + Send + Sync + 'static> MitmProxy<H> {
         let connector = TlsConnector::from(Arc::new(client_config));
 
         let server_tcp_stream = TcpStream::connect(&target_addr).await?;
-
         let server_name = host_for_cert.clone().try_into()?;
         let server_tls_stream = connector.connect(server_name, server_tcp_stream).await?;
         info!("Server TLS handshake successful for {}", host_for_cert);
 
-        let (mut client_reader, mut client_writer) = tokio::io::split(client_tls_stream);
-        let (mut server_reader, mut server_writer) = tokio::io::split(server_tls_stream);
+        let server_io = TokioIo::new(server_tls_stream);
+        let (sender, conn) = client_http1::handshake(server_io).await?;
 
-        let client_to_server = tokio::io::copy(&mut client_reader, &mut server_writer);
-        let server_to_client = tokio::io::copy(&mut server_reader, &mut client_writer);
+        let sender = Arc::new(tokio::sync::Mutex::new(sender));
 
-        tokio::select! {
-            result = client_to_server => {
-                if let Err(e) = result {
-                    warn!("Error copying client to server: {}", e);
-                }
-            },
-            result = server_to_client => {
-                if let Err(e) = result {
-                    warn!("Error copying server to client: {}", e);
-                }
+        tokio::spawn(async move {
+            if let Err(e) = conn.await {
+                warn!("Upstream connection error: {}", e);
             }
+        });
+
+        let proxy = self.clone();
+
+        let service = service_fn(move |mut req: Request<Incoming>| {
+            let proxy_clone = proxy.clone();
+            let sender_clone = sender.clone();
+            let host_for_cert = host_for_cert.clone();
+
+            async move {
+                info!("Intercepting request for {} {}", req.method(), req.uri());
+
+                let original_uri = req.uri().clone();
+                info!(
+                    "Original URI: {:?} {:?} {:?}",
+                    original_uri.scheme(),
+                    original_uri.authority(),
+                    original_uri
+                );
+                if original_uri.scheme().is_none() || original_uri.authority().is_none() {
+                    let new_uri_string = format!(
+                        "https://{}{}",
+                        host_for_cert,
+                        original_uri
+                            .path_and_query()
+                            .map(|pq| pq.as_str())
+                            .unwrap_or("/")
+                    );
+                    if let Ok(new_uri) = Uri::try_from(new_uri_string) {
+                        *req.uri_mut() = new_uri;
+                    } else {
+                        error!("Failed to parse URI");
+                        let resp = Response::builder()
+                            .status(StatusCode::BAD_REQUEST)
+                            .body(empty_body())
+                            .unwrap();
+                        return Ok::<Response<Body>, anyhow::Error>(resp);
+                    }
+                }
+
+                let req = req.map(|b| b.map_err(|e| anyhow!(e)).boxed());
+
+                let req_or_resp = if let Some(handler) = &proxy_clone.handler {
+                    match handler.handle_request(req).await {
+                        Ok(r) => r,
+                        Err(e) => {
+                            error!("Handler error on request: {}", e);
+                            let resp = Response::builder()
+                                .status(StatusCode::INTERNAL_SERVER_ERROR)
+                                .body(empty_body())
+                                .unwrap();
+                            return Ok(resp);
+                        }
+                    }
+                } else {
+                    RequestOrResponse::Request(req)
+                };
+
+                let final_req = match req_or_resp {
+                    RequestOrResponse::Request(r) => r,
+                    RequestOrResponse::Response(resp) => return Ok(resp),
+                };
+
+                let mut sender = sender_clone.lock().await;
+
+                if let Err(e) = sender.ready().await {
+                    error!("Failed to send request to upstream: {}", e);
+                    let resp = Response::builder()
+                        .status(StatusCode::SERVICE_UNAVAILABLE)
+                        .body(empty_body())
+                        .unwrap();
+                    return Ok(resp);
+                }
+
+                let res = match sender.send_request(final_req).await {
+                    Ok(r) => r,
+                    Err(e) => {
+                        error!("Failed to send request to upstream: {}", e);
+                        let resp = Response::builder()
+                            .status(StatusCode::INTERNAL_SERVER_ERROR)
+                            .body(empty_body())
+                            .unwrap();
+                        return Ok(resp);
+                    }
+                };
+
+                let res = res.map(|b| b.map_err(|e| anyhow!(e)).boxed());
+
+                let final_res = if let Some(handler) = &proxy_clone.handler {
+                    match handler.handle_response(res).await {
+                        Ok(r) => r,
+                        Err(e) => {
+                            error!("Handler error on response: {}", e);
+                            let resp = Response::builder()
+                                .status(StatusCode::INTERNAL_SERVER_ERROR)
+                                .body(empty_body())
+                                .unwrap();
+                            return Ok(resp);
+                        }
+                    }
+                } else {
+                    res
+                };
+
+                Ok(final_res)
+            }
+        });
+
+        let client_tls_stream_io = TokioIo::new(client_tls_stream);
+        if let Err(err) = http1::Builder::new()
+            .preserve_header_case(true)
+            .title_case_headers(true)
+            .serve_connection(client_tls_stream_io, service)
+            .with_upgrades()
+            .await
+        {
+            error!("Error serving client TLS connection {}", err);
         }
 
-        info!("TLS tunnel closed for {}", target_addr);
         Ok(())
     }
 }
