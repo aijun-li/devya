@@ -16,7 +16,10 @@ use rustls::{
     pki_types::{CertificateDer, PrivateKeyDer},
     ClientConfig, RootCertStore, ServerConfig,
 };
-use tokio::net::{TcpListener, TcpStream, ToSocketAddrs};
+use tokio::{
+    net::{TcpListener, TcpStream, ToSocketAddrs},
+    sync::broadcast,
+};
 use tokio_rustls::{TlsAcceptor, TlsConnector};
 use tracing::{debug, error, info, warn};
 
@@ -26,6 +29,7 @@ pub struct MitmProxy<A: ToSocketAddrs, H: HttpHandler> {
     bind_addr: Option<A>,
     root_cert: Option<RootCA>,
     handler: Option<H>,
+    shutdown_tx: Option<broadcast::Sender<()>>,
 }
 
 impl<A, H> MitmProxy<A, H>
@@ -47,7 +51,7 @@ where
     A: ToSocketAddrs + Send + Sync + 'static,
     H: HttpHandler + Send + Sync + 'static,
 {
-    pub async fn start(self) -> anyhow::Result<()> {
+    pub async fn start(mut self) -> anyhow::Result<()> {
         let Some(addr) = &self.bind_addr else {
             warn!("No bind address");
             return Ok(());
@@ -56,27 +60,65 @@ where
         let listener = TcpListener::bind(addr).await?;
         info!("Proxy listening on {}", listener.local_addr()?);
 
+        let (shutdown_tx, mut shutdown_rx) = broadcast::channel::<()>(1);
+        self.shutdown_tx = Some(shutdown_tx.clone());
+
         let proxy = Arc::new(self);
 
         loop {
-            let (stream, client_addr) = listener.accept().await?;
-            let proxy = proxy.clone();
+            tokio::select! {
+                accept_result = listener.accept() => {
+                    match accept_result {
+                        Ok((stream, client_addr)) => {
+                            let proxy = proxy.clone();
+                            let mut shutdown_rx = shutdown_tx.subscribe();
 
-            tokio::spawn(async move {
-                let io = TokioIo::new(stream);
-                if let Err(err) = http1::Builder::new()
-                    .preserve_header_case(true)
-                    .title_case_headers(true)
-                    .serve_connection(
-                        io,
-                        service_fn(move |req| proxy.clone().handle_connection(req, client_addr)),
-                    )
-                    .with_upgrades()
-                    .await
-                {
-                    error!("Error serving connection from {}: {}", client_addr, err)
+                            tokio::spawn(async move {
+                                let io = TokioIo::new(stream);
+                                let connection = http1::Builder::new()
+                                .preserve_header_case(true)
+                                .title_case_headers(true)
+                                .serve_connection(
+                                    io,
+                                    service_fn(move |req| proxy.clone().handle_connection(req, client_addr)),
+                                )
+                                .with_upgrades();
+
+                            tokio::select! {
+                                result = connection => {
+                                    if let Err(err) = result {
+                                        error!("Error serving connection from {}: {}", client_addr, err)
+                                    }
+                                }
+                                _ = shutdown_rx.recv() => {
+                                    info!("Shutting down connection from {}", client_addr);
+                                }
+                                };
+                            });
+                        }
+                        Err(e) => {
+                            error!("Failed to accept connection: {}", e);
+                        }
+                    }
                 }
-            });
+                _ = shutdown_rx.recv() => {
+                    info!("Shutting down proxy");
+                    break;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn stop(&self) -> anyhow::Result<()> {
+        if let Some(tx) = &self.shutdown_tx {
+            // ignore error when receiver closed
+            let _ = tx.send(());
+            info!("Stopping proxy");
+            Ok(())
+        } else {
+            Err(anyhow!("Proxy server not running or already stopped"))
         }
     }
 
@@ -385,6 +427,7 @@ where
             bind_addr: self.bind_addr,
             root_cert: self.root_ca,
             handler: self.handler,
+            shutdown_tx: None,
         }
     }
 }
