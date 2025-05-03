@@ -42,6 +42,7 @@ where
             bind_addr: None,
             root_ca: None,
             handler: None,
+            shutdown_tx: None,
         }
     }
 }
@@ -52,6 +53,8 @@ where
     H: HttpHandler + Send + Sync + 'static,
 {
     pub async fn start(mut self) -> anyhow::Result<()> {
+        println!("{:?}", self.shutdown_tx);
+
         let Some(addr) = &self.bind_addr else {
             warn!("No bind address");
             return Ok(());
@@ -60,8 +63,10 @@ where
         let listener = TcpListener::bind(addr).await?;
         info!("Proxy listening on {}", listener.local_addr()?);
 
-        let (shutdown_tx, mut shutdown_rx) = broadcast::channel::<()>(1);
-        self.shutdown_tx = Some(shutdown_tx.clone());
+        let (shutdown_tx, mut shutdown_rx) = match self.shutdown_tx {
+            Some(ref tx) => (tx.clone(), tx.subscribe()),
+            None => broadcast::channel::<()>(1),
+        };
 
         let proxy = Arc::new(self);
 
@@ -109,17 +114,6 @@ where
         }
 
         Ok(())
-    }
-
-    pub fn stop(&self) -> anyhow::Result<()> {
-        if let Some(tx) = &self.shutdown_tx {
-            // ignore error when receiver closed
-            let _ = tx.send(());
-            info!("Stopping proxy");
-            Ok(())
-        } else {
-            Err(anyhow!("Proxy server not running or already stopped"))
-        }
     }
 
     async fn handle_connection(
@@ -400,6 +394,7 @@ pub struct MitmProxyBuilder<A: ToSocketAddrs, H: HttpHandler> {
     bind_addr: Option<A>,
     root_ca: Option<RootCA>,
     handler: Option<H>,
+    shutdown_tx: Option<broadcast::Sender<()>>,
 }
 
 impl<A, H> MitmProxyBuilder<A, H>
@@ -422,12 +417,17 @@ where
         self
     }
 
+    pub fn with_shutdown(mut self, shutdown_tx: broadcast::Sender<()>) -> Self {
+        self.shutdown_tx = Some(shutdown_tx);
+        self
+    }
+
     pub fn build(self) -> MitmProxy<A, H> {
         MitmProxy {
             bind_addr: self.bind_addr,
             root_cert: self.root_ca,
             handler: self.handler,
-            shutdown_tx: None,
+            shutdown_tx: self.shutdown_tx,
         }
     }
 }
