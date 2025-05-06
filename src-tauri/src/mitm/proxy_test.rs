@@ -23,7 +23,9 @@ impl HttpHandler for TestHandler {
 #[tokio::test]
 async fn test_proxy() {
     let (shutdown_tx, _) = broadcast::channel::<()>(1);
-    let root_ca = RootCA::read_from_dir(".").await.unwrap();
+    let root_ca = RootCA::read_from_file("./ca.crt", "./ca.key")
+        .await
+        .unwrap();
     let proxy = MitmProxy::builder()
         .with_addr("127.0.0.1:8080")
         .with_handler(TestHandler)

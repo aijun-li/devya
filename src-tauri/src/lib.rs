@@ -72,8 +72,9 @@ pub fn run() {
                 let proxy = MitmProxy::builder()
                     .with_handler(Proxy)
                     .with_root_ca(root_ca)
+                    .with_addr("127.0.0.1:8080")
                     .build();
-                let _ = proxy.bind("127.0.0.1:8080").await;
+                let _ = proxy.start().await;
             });
             Ok(())
         })

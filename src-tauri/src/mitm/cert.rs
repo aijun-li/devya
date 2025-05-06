@@ -17,9 +17,6 @@ pub struct SignedCert {
     pub key_pair: KeyPair,
 }
 
-const CERT_NAME: &str = "ca.crt";
-const KEY_PAIR_NAME: &str = "ca.key";
-
 impl RootCA {
     pub fn new(name: &str) -> anyhow::Result<Self> {
         let mut params = CertificateParams::default();
@@ -35,17 +32,13 @@ impl RootCA {
         anyhow::Ok(Self { cert, key_pair })
     }
 
-    pub async fn read_from_dir<T>(dir_path: T) -> Option<Self>
+    pub async fn read_from_file<T>(cert_path: T, key_path: T) -> Option<Self>
     where
         T: AsRef<Path>,
     {
-        let dir_path = dir_path.as_ref();
-
-        let key_path = dir_path.join(KEY_PAIR_NAME);
         let key_pem = fs::read_to_string(key_path).await.ok()?;
         let key_pair = KeyPair::from_pem(&key_pem).ok()?;
 
-        let cert_path = dir_path.join(CERT_NAME);
         let cert_pem = fs::read_to_string(cert_path).await.ok()?;
         let cert_params = CertificateParams::from_ca_cert_pem(&cert_pem).ok()?;
         let cert = cert_params.self_signed(&key_pair).ok()?;
@@ -53,11 +46,11 @@ impl RootCA {
         Some(Self { cert, key_pair })
     }
 
-    pub fn install<T>(dir_path: T) -> anyhow::Result<()>
+    pub fn install<T>(cert_path: T) -> anyhow::Result<()>
     where
         T: AsRef<Path>,
     {
-        let cert_path = dir_path.as_ref().join(CERT_NAME).display().to_string();
+        let cert_path = cert_path.as_ref().display().to_string();
 
         if cfg!(target_os = "macos") {
             let default_keychain = String::from_utf8_lossy(
@@ -101,18 +94,11 @@ impl RootCA {
         }
     }
 
-    pub async fn save_to_dir<T>(&self, dir_path: T) -> anyhow::Result<()>
+    pub async fn save_to_file<T>(&self, cert_path: T, key_path: T) -> anyhow::Result<()>
     where
         T: AsRef<Path>,
     {
-        let dir_path = dir_path.as_ref();
-
-        fs::create_dir_all(dir_path).await?;
-
-        let cert_path = dir_path.join(CERT_NAME);
         fs::write(cert_path, self.cert.pem()).await?;
-
-        let key_path = dir_path.join(KEY_PAIR_NAME);
         fs::write(key_path, self.key_pair.serialize_pem()).await?;
 
         anyhow::Ok(())
