@@ -1,10 +1,8 @@
 use std::io::{Read, Write};
 
 use flate2::{read::GzDecoder, write::GzEncoder, Compression};
-use http_body_util::BodyExt;
-use hyper::Response;
 use mitm::{HttpHandler, MitmProxy, RootCA};
-use tracing::{debug, error};
+use quick_cache::sync::Cache;
 
 mod mitm;
 
@@ -21,7 +19,7 @@ impl HttpHandler for Proxy {
         &self,
         req: hyper::Request<mitm::Body>,
     ) -> anyhow::Result<mitm::RequestOrResponse> {
-        println!("{:?}", req);
+        // println!("{:?}", req);
         Ok(mitm::RequestOrResponse::Request(req))
     }
 
@@ -29,22 +27,23 @@ impl HttpHandler for Proxy {
         &self,
         res: hyper::Response<mitm::Body>,
     ) -> anyhow::Result<hyper::Response<mitm::Body>> {
-        let (parts, body) = res.into_parts();
+        // let (parts, body) = res.into_parts();
 
-        let collected_body = body.collect().await?;
+        // let collected_body = body.collect().await?;
 
-        let body_bytes = collected_body.to_bytes();
+        // let body_bytes = collected_body.to_bytes();
 
-        // println!(
-        //     "{:?}",
-        //     String::from_utf8_lossy(&decompress_gzip_data(&body_bytes).unwrap())
-        // );
+        // // println!(
+        // //     "{:?}",
+        // //     String::from_utf8_lossy(&decompress_gzip_data(&body_bytes).unwrap())
+        // // );
 
-        let new_body = mitm::full_body(compress_gzip_data(b"<div>12345</div>").unwrap());
+        // let new_body = mitm::full_body(compress_gzip_data(b"<div>12345</div>").unwrap());
 
-        let new_res = Response::from_parts(parts, new_body);
+        // let new_res = Response::from_parts(parts, new_body);
 
-        Ok(new_res)
+        // Ok(new_res)
+        Ok(res)
     }
 }
 
@@ -68,11 +67,14 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![greet])
         .setup(|_| {
             tokio::spawn(async move {
-                let root_ca = RootCA::new("devya").unwrap();
+                let root_ca = RootCA::read_from_file("./ca.crt", "./ca.key")
+                    .await
+                    .unwrap();
                 let proxy = MitmProxy::builder()
                     .with_handler(Proxy)
                     .with_root_ca(root_ca)
-                    .with_addr("127.0.0.1:8080")
+                    .with_cert_cache(Cache::new(128))
+                    .with_addr("127.0.0.1:7777")
                     .build();
                 let _ = proxy.start().await;
             });

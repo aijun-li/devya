@@ -1,7 +1,7 @@
 use std::{net::SocketAddr, sync::Arc};
 
-use super::RootCA;
-use anyhow::anyhow;
+use super::{RootCA, SignedCert};
+use anyhow::{anyhow, Context};
 use http_body_util::{combinators::BoxBody, BodyExt, Empty, Full};
 use hyper::{
     body::{Bytes, Incoming},
@@ -12,6 +12,7 @@ use hyper::{
     Method, Request, Response, StatusCode, Uri,
 };
 use hyper_util::rt::TokioIo;
+use quick_cache::sync::Cache;
 use rustls::{
     pki_types::{CertificateDer, PrivateKeyDer},
     ClientConfig, RootCertStore, ServerConfig,
@@ -28,6 +29,7 @@ pub type Body = BoxBody<Bytes, anyhow::Error>;
 pub struct MitmProxy<A: ToSocketAddrs, H: HttpHandler> {
     bind_addr: Option<A>,
     root_cert: Option<RootCA>,
+    cert_cache: Option<Cache<String, SignedCert>>,
     handler: Option<H>,
     shutdown_tx: Option<broadcast::Sender<()>>,
 }
@@ -41,6 +43,7 @@ where
         MitmProxyBuilder {
             bind_addr: None,
             root_ca: None,
+            cert_cache: None,
             handler: None,
             shutdown_tx: None,
         }
@@ -54,6 +57,8 @@ where
 {
     pub async fn start(mut self) -> anyhow::Result<()> {
         println!("{:?}", self.shutdown_tx);
+
+        self.cert_cache = Some(Cache::new(123));
 
         let Some(addr) = &self.bind_addr else {
             warn!("No bind address");
@@ -232,14 +237,12 @@ where
     ) -> anyhow::Result<()> {
         debug!("Initiating TLS interception for {}", target_addr);
 
-        let root_ca = self
-            .root_cert
-            .as_ref()
-            .ok_or_else(|| anyhow!("No root CA"))?;
-        let signed_cert = root_ca.sign(&host_for_cert)?;
+        let signed_cert = self
+            .get_signed_cert(&host_for_cert)
+            .context("Failed to sign cert")?;
 
-        let server_cert = CertificateDer::from(signed_cert.cert.der().as_ref().to_owned());
-        let server_key = PrivateKeyDer::Pkcs8(signed_cert.key_pair.serialize_der().into());
+        let server_cert = CertificateDer::from(signed_cert.cert);
+        let server_key = PrivateKeyDer::Pkcs8(signed_cert.key_pair.into());
 
         let server_config = ServerConfig::builder()
             .with_no_client_auth()
@@ -387,12 +390,26 @@ where
             }
         }
     }
+
+    fn get_signed_cert(&self, host: &str) -> anyhow::Result<SignedCert> {
+        let root_cert = self
+            .root_cert
+            .as_ref()
+            .ok_or_else(|| anyhow!("No ca root"))?;
+
+        let Some(cache) = &self.cert_cache else {
+            return root_cert.sign(host);
+        };
+
+        cache.get_or_insert_with(host, || root_cert.sign(host))
+    }
 }
 
 #[derive(Default)]
 pub struct MitmProxyBuilder<A: ToSocketAddrs, H: HttpHandler> {
     bind_addr: Option<A>,
     root_ca: Option<RootCA>,
+    cert_cache: Option<Cache<String, SignedCert>>,
     handler: Option<H>,
     shutdown_tx: Option<broadcast::Sender<()>>,
 }
@@ -417,6 +434,11 @@ where
         self
     }
 
+    pub fn with_cert_cache(mut self, cert_cache: Cache<String, SignedCert>) -> Self {
+        self.cert_cache = Some(cert_cache);
+        self
+    }
+
     pub fn with_shutdown(mut self, shutdown_tx: broadcast::Sender<()>) -> Self {
         self.shutdown_tx = Some(shutdown_tx);
         self
@@ -426,6 +448,7 @@ where
         MitmProxy {
             bind_addr: self.bind_addr,
             root_cert: self.root_ca,
+            cert_cache: self.cert_cache,
             handler: self.handler,
             shutdown_tx: self.shutdown_tx,
         }

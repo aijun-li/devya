@@ -12,9 +12,10 @@ pub struct RootCA {
     pub key_pair: KeyPair,
 }
 
+#[derive(Clone)]
 pub struct SignedCert {
-    pub cert: Certificate,
-    pub key_pair: KeyPair,
+    pub cert: Vec<u8>,
+    pub key_pair: Vec<u8>,
 }
 
 impl RootCA {
@@ -121,6 +122,9 @@ impl RootCA {
         // 用根证书签发
         let cert = params.signed_by(&key_pair, &self.cert, &self.key_pair)?;
 
-        anyhow::Ok(SignedCert { cert, key_pair })
+        anyhow::Ok(SignedCert {
+            cert: cert.der().to_vec(),
+            key_pair: key_pair.serialize_der(),
+        })
     }
 }
