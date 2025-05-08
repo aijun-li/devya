@@ -5,23 +5,26 @@ use anyhow::{anyhow, Context};
 use http_body_util::{combinators::BoxBody, BodyExt, Empty, Full};
 use hyper::{
     body::{Bytes, Incoming},
-    client::conn::http1 as client_http1,
-    server::conn::http1,
     service::service_fn,
     upgrade::Upgraded,
-    Method, Request, Response, StatusCode, Uri,
+    Method, Request, Response, StatusCode, Uri, Version,
 };
-use hyper_util::rt::TokioIo;
+use hyper_rustls::{ConfigBuilderExt, HttpsConnector};
+use hyper_util::{
+    client::legacy::{connect::HttpConnector, Client},
+    rt::{TokioExecutor, TokioIo},
+    server::conn::auto,
+};
 use quick_cache::sync::Cache;
 use rustls::{
     pki_types::{CertificateDer, PrivateKeyDer},
-    ClientConfig, RootCertStore, ServerConfig,
+    ClientConfig, ServerConfig,
 };
 use tokio::{
     net::{TcpListener, TcpStream, ToSocketAddrs},
     sync::broadcast,
 };
-use tokio_rustls::{TlsAcceptor, TlsConnector};
+use tokio_rustls::TlsAcceptor;
 use tracing::{debug, error, info, warn};
 
 pub type Body = BoxBody<Bytes, anyhow::Error>;
@@ -32,6 +35,7 @@ pub struct MitmProxy<A: ToSocketAddrs, H: HttpHandler> {
     cert_cache: Option<Cache<String, SignedCert>>,
     handler: Option<H>,
     shutdown_tx: Option<broadcast::Sender<()>>,
+    http_client: Client<HttpsConnector<HttpConnector>, Body>,
 }
 
 impl<A, H> MitmProxy<A, H>
@@ -85,24 +89,27 @@ where
 
                             tokio::spawn(async move {
                                 let io = TokioIo::new(stream);
-                                let connection = http1::Builder::new()
-                                .preserve_header_case(true)
-                                .title_case_headers(true)
-                                .serve_connection(
+                                let mut server_builder = auto::Builder::new(TokioExecutor::new());
+                                server_builder.http1()
+                                    .preserve_header_case(true)
+                                    .title_case_headers(true)
+                                    .http2()
+                                    .enable_connect_protocol();
+                                let connection = server_builder
+                                .serve_connection_with_upgrades(
                                     io,
                                     service_fn(move |req| proxy.clone().handle_connection(req, client_addr)),
-                                )
-                                .with_upgrades();
+                                );
 
-                            tokio::select! {
-                                result = connection => {
-                                    if let Err(err) = result {
-                                        error!("Error serving connection from {}: {}", client_addr, err)
+                                tokio::select! {
+                                    result = connection => {
+                                        if let Err(err) = result {
+                                            error!("Error serving connection from {}: {}", client_addr, err)
+                                        }
                                     }
-                                }
-                                _ = shutdown_rx.recv() => {
-                                    info!("Shutting down connection from {}", client_addr);
-                                }
+                                    _ = shutdown_rx.recv() => {
+                                        info!("Shutting down connection from {}", client_addr);
+                                    }
                                 };
                             });
                         }
@@ -149,34 +156,7 @@ where
             RequestOrResponse::Response(resp) => return Ok(resp),
         };
 
-        let Some(host) = final_req.uri().host() else {
-            error!("URI has no host");
-            return Ok(error_response(StatusCode::BAD_REQUEST, "URI has no host"));
-        };
-        let port = final_req.uri().port_u16().unwrap_or(80);
-        let addr = format!("{}:{}", host, port);
-
-        let stream = match TcpStream::connect(&addr).await {
-            Ok(s) => s,
-            Err(e) => {
-                error!("Failed to connect to upstream {}: {}", addr, e);
-                return Ok(error_response(
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    &format!("Failed to connect to upstream {}", addr),
-                ));
-            }
-        };
-        let io = TokioIo::new(stream);
-
-        let (mut sender, conn) = client_http1::handshake(io).await?;
-
-        tokio::spawn(async move {
-            if let Err(e) = conn.await {
-                warn!("Upstream connection error: {}", e);
-            }
-        });
-
-        let res = match sender.send_request(final_req).await {
+        let res = match self.http_client.request(final_req).await {
             Ok(r) => r,
             Err(e) => {
                 error!("Failed to send request to upstream: {}", e);
@@ -244,44 +224,20 @@ where
         let server_cert = CertificateDer::from(signed_cert.cert);
         let server_key = PrivateKeyDer::Pkcs8(signed_cert.key_pair.into());
 
-        let server_config = ServerConfig::builder()
+        let mut server_config = ServerConfig::builder()
             .with_no_client_auth()
             .with_single_cert(vec![server_cert.clone()], server_key)?;
+        server_config.alpn_protocols = vec![b"h2".to_vec(), b"http/1.1".to_vec()];
         let acceptor = TlsAcceptor::from(Arc::new(server_config));
 
         let client_io = TokioIo::new(upgraded);
         let client_tls_stream = acceptor.accept(client_io).await?;
         debug!("Client TLS handshake successful for {}", host_for_cert);
 
-        let root_cert_store = RootCertStore {
-            roots: webpki_roots::TLS_SERVER_ROOTS.to_vec(),
-        };
-        let client_config = ClientConfig::builder()
-            .with_root_certificates(root_cert_store)
-            .with_no_client_auth();
-        let connector = TlsConnector::from(Arc::new(client_config));
-
-        let server_tcp_stream = TcpStream::connect(&target_addr).await?;
-        let server_name = host_for_cert.clone().try_into()?;
-        let server_tls_stream = connector.connect(server_name, server_tcp_stream).await?;
-        debug!("Server TLS handshake successful for {}", host_for_cert);
-
-        let server_io = TokioIo::new(server_tls_stream);
-        let (sender, conn) = client_http1::handshake(server_io).await?;
-
-        tokio::spawn(async move {
-            if let Err(e) = conn.await {
-                warn!("Upstream connection error: {}", e);
-            }
-        });
-
-        let sender = Arc::new(tokio::sync::Mutex::new(sender));
-
         let proxy = self.clone();
 
         let service = service_fn(move |mut req: Request<Incoming>| {
             let proxy = proxy.clone();
-            let sender = sender.clone();
             let host_for_cert = host_for_cert.clone();
 
             async move {
@@ -320,9 +276,7 @@ where
                     RequestOrResponse::Response(resp) => return Ok(resp),
                 };
 
-                let mut sender = sender.lock().await;
-
-                let res = match sender.send_request(final_req).await {
+                let res = match proxy.http_client.request(final_req).await {
                     Ok(r) => r,
                     Err(e) => {
                         error!("Failed to send request to upstream: {}", e);
@@ -340,11 +294,12 @@ where
         });
 
         let client_tls_stream_io = TokioIo::new(client_tls_stream);
-        if let Err(err) = http1::Builder::new()
+        let mut server_builder = auto::Builder::new(TokioExecutor::new());
+        if let Err(err) = server_builder
+            .http1()
             .preserve_header_case(true)
             .title_case_headers(true)
-            .serve_connection(client_tls_stream_io, service)
-            .with_upgrades()
+            .serve_connection_with_upgrades(client_tls_stream_io, service)
             .await
         {
             error!("Error serving client TLS connection {}", err);
@@ -356,19 +311,28 @@ where
     async fn get_final_req(&self, req: Request<Incoming>) -> RequestOrResponse {
         let req = req.map(|b| b.map_err(|e| anyhow!(e)).boxed());
 
-        let Some(handler) = &self.handler else {
+        let final_req = if let Some(handler) = &self.handler {
+            match handler.handle_request(req).await {
+                Ok(r) => r,
+                Err(e) => {
+                    error!("Failed to handle request: {}", e);
+                    RequestOrResponse::Response(error_response(
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        "Failed to handle request",
+                    ))
+                }
+            }
+        } else {
             return RequestOrResponse::Request(req);
         };
 
-        match handler.handle_request(req).await {
-            Ok(r) => r,
-            Err(e) => {
-                error!("Failed to handle request: {}", e);
-                RequestOrResponse::Response(error_response(
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "Failed to handle request",
-                ))
+        match final_req {
+            RequestOrResponse::Request(mut r) => {
+                // reset version to enable optional HTTP2 upgrade
+                *r.version_mut() = Version::default();
+                RequestOrResponse::Request(r)
             }
+            resp => resp,
         }
     }
 
@@ -451,7 +415,25 @@ where
             cert_cache: self.cert_cache,
             handler: self.handler,
             shutdown_tx: self.shutdown_tx,
+            http_client: Self::make_http_client(),
         }
+    }
+
+    fn make_http_client() -> Client<HttpsConnector<HttpConnector>, Body> {
+        let _ = rustls::crypto::aws_lc_rs::default_provider().install_default();
+
+        let client_config = ClientConfig::builder()
+            .with_webpki_roots()
+            .with_no_client_auth();
+
+        let https = hyper_rustls::HttpsConnectorBuilder::new()
+            .with_tls_config(client_config)
+            .https_or_http()
+            .enable_http1()
+            .enable_http2()
+            .build();
+
+        Client::builder(TokioExecutor::new()).build(https)
     }
 }
 
