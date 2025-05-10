@@ -1,9 +1,0 @@
-pre-commit:
-  commands:
-    "lint frontend":
-      run: npx eslint --fix {staged_files}
-
-commit-msg:
-  commands:
-    "lint commit message":
-      run: npx commitlint --edit {1}

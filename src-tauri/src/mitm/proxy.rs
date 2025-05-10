@@ -60,10 +60,6 @@ where
     H: HttpHandler + Send + Sync + 'static,
 {
     pub async fn start(mut self) -> anyhow::Result<()> {
-        println!("{:?}", self.shutdown_tx);
-
-        self.cert_cache = Some(Cache::new(123));
-
         let Some(addr) = &self.bind_addr else {
             warn!("No bind address");
             return Ok(());
