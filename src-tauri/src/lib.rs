@@ -1,16 +1,12 @@
+mod commands;
+mod mitm;
+
 use std::io::{Read, Write};
 
+use commands::{check_ca_installed, install_ca};
 use flate2::{read::GzDecoder, write::GzEncoder, Compression};
 use mitm::{HttpHandler, MitmProxy, RootCA};
 use quick_cache::sync::Cache;
-
-mod mitm;
-
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
 
 struct Proxy;
 
@@ -64,20 +60,20 @@ fn decompress_gzip_data(compressed_data: &[u8]) -> Result<Vec<u8>, std::io::Erro
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet])
+        .invoke_handler(tauri::generate_handler![check_ca_installed, install_ca])
         .setup(|_| {
-            tokio::spawn(async move {
-                let root_ca = RootCA::read_from_file("./ca.crt", "./ca.key")
-                    .await
-                    .unwrap();
-                let proxy = MitmProxy::builder()
-                    .with_handler(Proxy)
-                    .with_root_ca(root_ca)
-                    .with_cert_cache(Cache::new(128))
-                    .with_addr("127.0.0.1:7777")
-                    .build();
-                let _ = proxy.start().await;
-            });
+            // tokio::spawn(async move {
+            //     let root_ca = RootCA::read_from_file("./ca.crt", "./ca.key")
+            //         .await
+            //         .unwrap();
+            //     let proxy = MitmProxy::builder()
+            //         .with_handler(Proxy)
+            //         .with_root_ca(root_ca)
+            //         .with_cert_cache(Cache::new(128))
+            //         .with_addr("127.0.0.1:7777")
+            //         .build();
+            //     let _ = proxy.start().await;
+            // });
             Ok(())
         })
         .run(tauri::generate_context!())

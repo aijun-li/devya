@@ -2,12 +2,23 @@
 import { invoke } from '@tauri-apps/api/core';
 import { ref } from 'vue';
 
-const greetMsg = ref('');
-const name = ref('devya');
+const greetMsg = ref<boolean>();
 
 async function greet() {
   // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-  greetMsg.value = await invoke('greet', { name: name.value });
+  try {
+    greetMsg.value = await invoke<boolean>('check_ca_installed');
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function installCA() {
+  try {
+    greetMsg.value = await invoke('install_ca');
+  } catch (e) {
+    console.error(e);
+  }
 }
 </script>
 
@@ -15,7 +26,8 @@ async function greet() {
   <main
     class="flex h-screen w-screen flex-col items-center justify-center gap-2"
   >
-    <div>{{ greetMsg }}</div>
+    <div v-if="greetMsg !== undefined">{{ greetMsg }}</div>
     <Button @click="greet">Greet</Button>
+    <Button @click="installCA">Install CA</Button>
   </main>
 </template>

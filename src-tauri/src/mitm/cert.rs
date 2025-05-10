@@ -5,7 +5,9 @@ use rcgen::{
     BasicConstraints, Certificate, CertificateParams, DistinguishedName, DnType,
     ExtendedKeyUsagePurpose, IsCa, KeyPair, KeyUsagePurpose,
 };
+use time::{Duration, OffsetDateTime};
 use tokio::fs;
+use tracing::{debug, info};
 
 pub struct RootCA {
     pub cert: Certificate,
@@ -19,13 +21,14 @@ pub struct SignedCert {
 }
 
 impl RootCA {
-    pub fn new(name: &str) -> anyhow::Result<Self> {
+    pub fn new(name: &str, days_until_expiry: i64) -> anyhow::Result<Self> {
         let mut params = CertificateParams::default();
 
         params.distinguished_name = DistinguishedName::new();
         params.distinguished_name.push(DnType::CommonName, name);
         params.is_ca = IsCa::Ca(BasicConstraints::Unconstrained);
         params.key_usages = vec![KeyUsagePurpose::KeyCertSign, KeyUsagePurpose::CrlSign];
+        params.not_after = OffsetDateTime::now_utc() + Duration::days(days_until_expiry);
 
         let key_pair = KeyPair::generate()?;
         let cert = params.self_signed(&key_pair)?;
@@ -95,11 +98,55 @@ impl RootCA {
         }
     }
 
+    pub fn check_installed<T>(cert_path: T) -> anyhow::Result<bool>
+    where
+        T: AsRef<Path>,
+    {
+        let cert_path = cert_path.as_ref().display().to_string();
+        if cfg!(target_os = "macos") {
+            let default_keychain = String::from_utf8_lossy(
+                &Command::new("security")
+                    .arg("default-keychain")
+                    .output()?
+                    .stdout,
+            )
+            .trim()
+            .to_string()
+            .replace(r#"""#, "");
+
+            let output = Command::new("security")
+                .args(["verify-cert", "-k", &default_keychain, "-c", &cert_path])
+                .output()
+                .map_err(|_| anyhow!("Failed to install cert"))?;
+
+            debug!("verify cert output {:?}", output);
+
+            Ok(output.status.success())
+        } else if cfg!(target_os = "windows") {
+            todo!("Windows not supported yet")
+        } else {
+            Err(anyhow!("Unsupported platform"))
+        }
+    }
+
     pub async fn save_to_file<T>(&self, cert_path: T, key_path: T) -> anyhow::Result<()>
     where
         T: AsRef<Path>,
     {
+        let cert_path = cert_path.as_ref();
+        if let Some(parent_dir) = cert_path.parent() {
+            if !parent_dir.exists() {
+                fs::create_dir_all(parent_dir).await?;
+            }
+        }
         fs::write(cert_path, self.cert.pem()).await?;
+
+        let key_path = key_path.as_ref();
+        if let Some(parent_dir) = key_path.parent() {
+            if !parent_dir.exists() {
+                fs::create_dir_all(parent_dir).await?;
+            }
+        }
         fs::write(key_path, self.key_pair.serialize_pem()).await?;
 
         anyhow::Ok(())

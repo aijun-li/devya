@@ -36,3 +36,4 @@ trait-variant = "0.1"
 flate2 = "1"
 quick_cache = "0.6.13"
 hyper-rustls = { version = "0.27.5", features = ["webpki-roots", "http2"] }
+time = "0.3.41"
