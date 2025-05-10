@@ -22,4 +22,10 @@ export default defineConfig([
     languageOptions: { parserOptions: { parser: tseslint.parser } },
   },
   eslintPluginPrettier,
+  {
+    rules: {
+      '@typescript-eslint/no-empty-object-type': 'off',
+      'vue/multi-word-component-names': 'off',
+    },
+  },
 ]);

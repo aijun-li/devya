@@ -1,5 +1,13 @@
+import PrimeVue from 'primevue/config';
 import { createApp } from 'vue';
 import App from './App.vue';
-import './style.css';
+import './assets/base.css';
+import './assets/tailwind.css';
 
-createApp(App).mount('#app');
+const app = createApp(App);
+
+app.use(PrimeVue, {
+  unstyled: true,
+});
+
+app.mount('#app');
