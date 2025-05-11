@@ -119,11 +119,25 @@ impl RootCA {
                 .output()
                 .map_err(|_| anyhow!("Failed to install cert"))?;
 
-            debug!("verify cert output {:?}", output);
+            debug!("[MacOS] Check cert verified output: {:?}", output);
 
             Ok(output.status.success())
         } else if cfg!(target_os = "windows") {
-            todo!("Windows not supported yet")
+            let output = Command::new("certutil")
+                .arg("-verify")
+                .arg("-user")
+                .arg(cert_path)
+                .output()
+                .map_err(|_| anyhow!("Failed to install cert"))?;
+
+            match output.status.success() {
+                true => {
+                    let output_str = String::from_utf8_lossy(&output.stdout);
+                    debug!("[Win] Check cert verified output: {}", output_str);
+                    Ok(output_str.contains("dwErrorStatus=0"))
+                }
+                false => Ok(false),
+            }
         } else {
             Err(anyhow!("Unsupported platform"))
         }
