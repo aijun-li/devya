@@ -1,6 +1,8 @@
 import tailwindcss from '@tailwindcss/vite';
 import vue from '@vitejs/plugin-vue';
 import path from 'path';
+import IconsResolver from 'unplugin-icons/resolver';
+import Icons from 'unplugin-icons/vite';
 import Components from 'unplugin-vue-components/vite';
 import { defineConfig } from 'vite';
 
@@ -11,9 +13,17 @@ export default defineConfig(async () => ({
   plugins: [
     vue(),
     tailwindcss(),
+    Icons({
+      autoInstall: true,
+    }),
     Components({
       dirs: ['src/components', 'src/volt'],
       dts: true,
+      resolvers: [
+        IconsResolver({
+          prefix: 'Icon',
+        }),
+      ],
     }),
   ],
 
