@@ -33,7 +33,6 @@ pub async fn check_ca_installed(app: tauri::AppHandle) -> Result<bool, String> {
         .path()
         .app_local_data_dir()
         .map_err(|err| err.to_string())?;
-    info!("app_local_data_dir {:?}", app_local_data_dir);
 
     create_ca_if_not_exists(&app_local_data_dir)
         .await
