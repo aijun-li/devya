@@ -22,14 +22,28 @@ async function onHttpsClick() {
       <Button>123</Button>
     </div>
 
-    <div class="sticky bottom-0 flex items-center justify-between px-2 py-1">
-      <div>Listening on 127.0.0.1:8899</div>
-      <div
-        class="flex items-center gap-2"
-        :class="[caInstalled ? 'text-green-600' : 'cursor-pointer']"
-        @click="onHttpsClick"
-      >
-        <IconMdiHttps />
+    <div class="text-surface-500 sticky bottom-0 flex flex-col text-xs">
+      <Divider class="m-0!" />
+
+      <div class="flex items-center justify-between px-2 py-0.5">
+        <div class="flex items-center">
+          <div class="mx-2 h-1.5 w-1.5 rounded-full bg-green-700" />
+          <SecondaryButton class="p-1! text-xs!" text size="small"
+            >Listening on 127.0.0.1:8899</SecondaryButton
+          >
+          <ToggleSwitch :model-value="true" class="scale-70" />
+        </div>
+        <SecondaryButton
+          class="flex items-center gap-1! p-1! text-xs!"
+          :class="[caInstalled ? 'text-green-700!' : 'cursor-pointer']"
+          text
+          size="small"
+          :disabled="caInstalled"
+          @click="onHttpsClick"
+        >
+          <IconMdiHttps />
+          TLS {{ caInstalled ? 'Enabled' : 'Disabled' }}
+        </SecondaryButton>
       </div>
     </div>
   </main>

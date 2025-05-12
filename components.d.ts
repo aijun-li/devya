@@ -9,6 +9,10 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     Button: typeof import('./src/volt/Button.vue')['default']
+    Divider: typeof import('./src/volt/Divider.vue')['default']
     IconMdiHttps: typeof import('~icons/mdi/https')['default']
+    IconMdiPlay: typeof import('~icons/mdi/play')['default']
+    SecondaryButton: typeof import('./src/volt/SecondaryButton.vue')['default']
+    ToggleSwitch: typeof import('./src/volt/ToggleSwitch.vue')['default']
   }
 }
