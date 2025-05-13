@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
-import Column from 'primevue/column';
 import { checkCaInstalled, installCa } from './commands';
 
 const { data: caInstalled, refetch: reCheckCa } = useQuery({
@@ -32,19 +31,19 @@ const mockData = Array.from({ length: 5 }).map((_, index) => ({
       <div
         class="border-surface-200 flex h-full w-13 flex-col items-center gap-4 border-r border-solid py-4"
       >
-        <ContrastButton icon="pi" variant="text" raised>
+        <Button icon="pi" severity="contrast" variant="text" raised>
           <IconLucideSquareActivity />
-        </ContrastButton>
-        <ContrastButton icon="pi" variant="text">
+        </Button>
+        <Button icon="pi" severity="contrast" variant="text">
           <IconLucideFileJson />
-        </ContrastButton>
-        <ContrastButton icon="pi" variant="text">
+        </Button>
+        <Button icon="pi" severity="contrast" variant="text">
           <IconLucideSettings />
-        </ContrastButton>
+        </Button>
       </div>
 
       <div class="h-full flex-1 overflow-auto p-2">
-        <DataTable :value="mockData" striped-rows>
+        <DataTable :value="mockData" striped-rows size="small">
           <Column field="id" header="ID"></Column>
           <Column field="method" header="Method"></Column>
           <Column field="protocol" header="Protocol"></Column>
@@ -60,13 +59,17 @@ const mockData = Array.from({ length: 5 }).map((_, index) => ({
     >
       <div class="flex items-center justify-between px-2 py-0.5">
         <div class="flex items-center">
-          <div class="mx-2 h-1.5 w-1.5 rounded-full bg-green-700" />
-          <SecondaryButton class="p-1! text-xs!" variant="text" size="small">
-            Listening on 127.0.0.1:8899
-          </SecondaryButton>
-          <ToggleSwitch :model-value="true" class="scale-70" />
+          <div class="mr-1 ml-2 h-1.5 w-1.5 rounded-full bg-green-700" />
+          <Button
+            class="p-1! text-xs!"
+            severity="secondary"
+            variant="text"
+            size="small"
+          >
+            Listening on 127.0.0.1:7777
+          </Button>
         </div>
-        <SecondaryButton
+        <Button
           class="flex items-center gap-1! p-1! text-xs!"
           :class="[caInstalled ? 'text-green-700!' : 'cursor-pointer']"
           variant="text"
@@ -76,7 +79,7 @@ const mockData = Array.from({ length: 5 }).map((_, index) => ({
         >
           <IconMdiHttps />
           TLS {{ caInstalled ? 'Enabled' : 'Disabled' }}
-        </SecondaryButton>
+        </Button>
       </div>
     </div>
   </main>

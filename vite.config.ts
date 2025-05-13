@@ -1,3 +1,4 @@
+import { PrimeVueResolver } from '@primevue/auto-import-resolver';
 import tailwindcss from '@tailwindcss/vite';
 import vue from '@vitejs/plugin-vue';
 import path from 'path';
@@ -23,6 +24,7 @@ export default defineConfig(async () => ({
         IconsResolver({
           prefix: 'Icon',
         }),
+        PrimeVueResolver(),
       ],
     }),
   ],

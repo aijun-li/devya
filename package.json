@@ -7,16 +7,15 @@
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
-    "tauri": "tauri",
-    "volt": "npx volt-vue add"
+    "tauri": "tauri"
   },
   "dependencies": {
+    "@primeuix/themes": "^1.1.1",
     "@primevue/icons": "^4.3.4",
     "@tanstack/vue-query": "^5.75.7",
     "@tauri-apps/api": "^2.5.0",
     "@tauri-apps/plugin-opener": "^2.2.6",
     "primevue": "^4.3.4",
-    "tailwind-merge": "^3.2.0",
     "tailwindcss-primeui": "^0.6.1",
     "vue": "^3.5.13"
   },
@@ -27,6 +26,7 @@
     "@iconify-json/lucide": "^1.2.42",
     "@iconify-json/mdi": "^1.2.3",
     "@iconify-json/tabler": "^1.2.17",
+    "@primevue/auto-import-resolver": "^4.3.4",
     "@tailwindcss/vite": "^4.1.6",
     "@tauri-apps/cli": "^2.5.0",
     "@types/node": "^22.15.17",

@@ -8,19 +8,13 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    Button: typeof import('./src/volt/Button.vue')['default']
-    ContrastButton: typeof import('./src/volt/ContrastButton.vue')['default']
-    DataTable: typeof import('./src/volt/DataTable.vue')['default']
-    Divider: typeof import('./src/volt/Divider.vue')['default']
+    Button: typeof import('primevue/button')['default']
+    Column: typeof import('primevue/column')['default']
+    DataTable: typeof import('primevue/datatable')['default']
     IconLucideFileJson: typeof import('~icons/lucide/file-json')['default']
-    IconLucideNetwork: typeof import('~icons/lucide/network')['default']
     IconLucideSettings: typeof import('~icons/lucide/settings')['default']
     IconLucideSquareActivity: typeof import('~icons/lucide/square-activity')['default']
-    IconMdiCode: typeof import('~icons/mdi/code')['default']
     IconMdiHttps: typeof import('~icons/mdi/https')['default']
-    IconMdiPlay: typeof import('~icons/mdi/play')['default']
-    IconTablerNetwork: typeof import('~icons/tabler/network')['default']
-    SecondaryButton: typeof import('./src/volt/SecondaryButton.vue')['default']
-    ToggleSwitch: typeof import('./src/volt/ToggleSwitch.vue')['default']
+    ToggleSwitch: typeof import('primevue/toggleswitch')['default']
   }
 }

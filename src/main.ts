@@ -1,3 +1,4 @@
+import Aura from '@primeuix/themes/aura';
 import { VueQueryPlugin } from '@tanstack/vue-query';
 import PrimeVue from 'primevue/config';
 import { createApp } from 'vue';
@@ -8,7 +9,9 @@ import './assets/tailwind.css';
 const app = createApp(App);
 
 app.use(PrimeVue, {
-  unstyled: true,
+  theme: {
+    preset: Aura,
+  },
 });
 
 app.use(VueQueryPlugin);
