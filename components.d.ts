@@ -15,6 +15,8 @@ declare module 'vue' {
     IconLucideSettings: typeof import('~icons/lucide/settings')['default']
     IconLucideSquareActivity: typeof import('~icons/lucide/square-activity')['default']
     IconMdiHttps: typeof import('~icons/mdi/https')['default']
+    Splitter: typeof import('primevue/splitter')['default']
+    SplitterPanel: typeof import('primevue/splitterpanel')['default']
     ToggleSwitch: typeof import('primevue/toggleswitch')['default']
   }
 }

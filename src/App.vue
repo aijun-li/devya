@@ -26,11 +26,9 @@ const mockData = Array.from({ length: 5 }).map((_, index) => ({
 </script>
 
 <template>
-  <main class="flex h-screen w-screen flex-col">
+  <main class="flex h-screen w-screen flex-col bg-neutral-200">
     <div class="flex flex-1 overflow-auto">
-      <div
-        class="border-surface-200 flex h-full w-13 flex-col items-center gap-4 border-r border-solid py-4"
-      >
+      <div class="flex h-full w-14 flex-col items-center gap-6 py-4">
         <Button icon="pi" severity="contrast" variant="text" raised>
           <IconLucideSquareActivity />
         </Button>
@@ -42,20 +40,33 @@ const mockData = Array.from({ length: 5 }).map((_, index) => ({
         </Button>
       </div>
 
-      <div class="h-full flex-1 overflow-auto p-2">
-        <DataTable :value="mockData" striped-rows size="small">
-          <Column field="id" header="ID"></Column>
-          <Column field="method" header="Method"></Column>
-          <Column field="protocol" header="Protocol"></Column>
-          <Column field="host" header="Host"></Column>
-          <Column field="path" header="Path"></Column>
-          <Column field="code" header="Code"></Column>
-        </DataTable>
+      <div class="h-full min-w-0 flex-1 overflow-auto p-2 pl-0">
+        <Splitter
+          class="h-full bg-transparent!"
+          pt:gutter:class="bg-transparent bg-transparent! w-1.5"
+        >
+          <SplitterPanel>
+            <div class="bg-surface-0 h-full overflow-hidden rounded">
+              <DataTable :value="mockData" striped-rows size="small">
+                <Column field="id" header="ID"></Column>
+                <Column field="method" header="Method"></Column>
+                <Column field="protocol" header="Protocol"></Column>
+                <Column field="host" header="Host"></Column>
+                <Column field="path" header="Path"></Column>
+                <Column field="code" header="Code"></Column>
+              </DataTable>
+            </div>
+          </SplitterPanel>
+
+          <SplitterPanel>
+            <div class="bg-surface-0 h-full overflow-hidden rounded"></div>
+          </SplitterPanel>
+        </Splitter>
       </div>
     </div>
 
     <div
-      class="text-surface-500 border-surface-200 sticky bottom-0 flex flex-col border-t border-solid text-xs"
+      class="text-surface-500 sticky bottom-0 flex flex-col bg-neutral-100 text-xs"
     >
       <div class="flex items-center justify-between px-2 py-0.5">
         <div class="flex items-center">
