@@ -59,6 +59,7 @@ fn decompress_gzip_data(compressed_data: &[u8]) -> Result<Vec<u8>, std::io::Erro
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![check_ca_installed, install_ca])
         .setup(|_| {

@@ -8,15 +8,24 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    BottomBar: typeof import('./src/components/BottomBar.vue')['default']
     Button: typeof import('primevue/button')['default']
     Column: typeof import('primevue/column')['default']
     DataTable: typeof import('primevue/datatable')['default']
+    IconFluentDismiss16Regular: typeof import('~icons/fluent/dismiss16-regular')['default']
+    IconFluentMaximize16Regular: typeof import('~icons/fluent/maximize16-regular')['default']
+    IconFluentMinimize16Regular: typeof import('~icons/fluent/minimize16-regular')['default']
+    IconFluentSquareMultiple16Regular: typeof import('~icons/fluent/square-multiple16-regular')['default']
     IconLucideFileJson: typeof import('~icons/lucide/file-json')['default']
     IconLucideSettings: typeof import('~icons/lucide/settings')['default']
     IconLucideSquareActivity: typeof import('~icons/lucide/square-activity')['default']
     IconMdiHttps: typeof import('~icons/mdi/https')['default']
+    Sidebar: typeof import('./src/components/Sidebar.vue')['default']
     Splitter: typeof import('primevue/splitter')['default']
     SplitterPanel: typeof import('primevue/splitterpanel')['default']
+    TitleBar: typeof import('./src/components/TitleBar.vue')['default']
     ToggleSwitch: typeof import('primevue/toggleswitch')['default']
+    WindowControls: typeof import('./src/components/WindowControls.vue')['default']
+    WindowsControl: typeof import('./src/components/WindowsControl.vue')['default']
   }
 }

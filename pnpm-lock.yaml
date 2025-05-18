@@ -23,6 +23,9 @@ importers:
       '@tauri-apps/plugin-opener':
         specifier: ^2.2.6
         version: 2.2.6
+      '@tauri-apps/plugin-os':
+        specifier: ~2
+        version: 2.2.1
       primevue:
         specifier: ^4.3.4
         version: 4.3.4(vue@3.5.13(typescript@5.6.3))
@@ -42,6 +45,9 @@ importers:
       '@eslint/js':
         specifier: ^9.26.0
         version: 9.26.0
+      '@iconify-json/fluent':
+        specifier: ^1.2.21
+        version: 1.2.21
       '@iconify-json/lucide':
         specifier: ^1.2.42
         version: 1.2.42
@@ -422,6 +428,9 @@ packages:
     resolution: {integrity: sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ==}
     engines: {node: '>=18.18'}
 
+  '@iconify-json/fluent@1.2.21':
+    resolution: {integrity: sha512-nLX6I/+KuW4XapOjShZYSCS3Ze+CVqG2ORwCqxC2KTvDiSgsPlYtz3kJ5F1KRzurIij/iskHj36kXxItP4eRdQ==}
+
   '@iconify-json/lucide@1.2.42':
     resolution: {integrity: sha512-exkRygF4yd6e5q966TXJQc/b+MAu3iQb8LeExCjl2JoP4/RlpudkYpg1AIZVCVCjAiElDYmVJYDWiJXPLkFN/g==}
 
@@ -793,6 +802,9 @@ packages:
 
   '@tauri-apps/plugin-opener@2.2.6':
     resolution: {integrity: sha512-bSdkuP71ZQRepPOn8BOEdBKYJQvl6+jb160QtJX/i2H9BF6ZySY/kYljh76N2Ne5fJMQRge7rlKoStYQY5Jq1w==}
+
+  '@tauri-apps/plugin-os@2.2.1':
+    resolution: {integrity: sha512-cNYpNri2CCc6BaNeB6G/mOtLvg8dFyFQyCUdf2y0K8PIAKGEWdEcu8DECkydU2B+oj4OJihDPD2de5K6cbVl9A==}
 
   '@types/conventional-commits-parser@5.0.1':
     resolution: {integrity: sha512-7uz5EHdzz2TqoMfV7ee61Egf5y6NkcO4FB/1iCCQnbeiI1F3xzv3vK5dBCXUCLQgGYS+mUeigK1iKQzvED+QnQ==}
@@ -2638,6 +2650,10 @@ snapshots:
 
   '@humanwhocodes/retry@0.4.3': {}
 
+  '@iconify-json/fluent@1.2.21':
+    dependencies:
+      '@iconify/types': 2.0.0
+
   '@iconify-json/lucide@1.2.42':
     dependencies:
       '@iconify/types': 2.0.0
@@ -2943,6 +2959,10 @@ snapshots:
       '@tauri-apps/cli-win32-x64-msvc': 2.5.0
 
   '@tauri-apps/plugin-opener@2.2.6':
+    dependencies:
+      '@tauri-apps/api': 2.5.0
+
+  '@tauri-apps/plugin-os@2.2.1':
     dependencies:
       '@tauri-apps/api': 2.5.0
 

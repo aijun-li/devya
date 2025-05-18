@@ -15,6 +15,7 @@
     "@tanstack/vue-query": "^5.75.7",
     "@tauri-apps/api": "^2.5.0",
     "@tauri-apps/plugin-opener": "^2.2.6",
+    "@tauri-apps/plugin-os": "~2",
     "primevue": "^4.3.4",
     "tailwindcss-primeui": "^0.6.1",
     "vue": "^3.5.13"
@@ -23,6 +24,7 @@
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
     "@eslint/js": "^9.26.0",
+    "@iconify-json/fluent": "^1.2.21",
     "@iconify-json/lucide": "^1.2.42",
     "@iconify-json/mdi": "^1.2.3",
     "@iconify-json/tabler": "^1.2.17",
