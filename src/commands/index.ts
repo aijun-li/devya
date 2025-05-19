@@ -8,3 +8,7 @@ export async function checkCaInstalled() {
 export async function installCa() {
   await invoke('install_ca');
 }
+
+export async function startProxy(port: number) {
+  await invoke('start_proxy', { port });
+}

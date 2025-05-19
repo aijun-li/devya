@@ -21,16 +21,15 @@ use rustls::{
     ClientConfig, ServerConfig,
 };
 use tokio::{
-    net::{TcpListener, TcpStream, ToSocketAddrs},
+    net::{TcpListener, TcpStream},
     sync::broadcast,
 };
 use tokio_rustls::TlsAcceptor;
-use tracing::{debug, error, info, warn};
+use tracing::{debug, error, info};
 
 pub type Body = BoxBody<Bytes, anyhow::Error>;
 
-pub struct MitmProxy<A: ToSocketAddrs, H: HttpHandler> {
-    bind_addr: Option<A>,
+pub struct MitmProxy<H: HttpHandler> {
     root_cert: Option<RootCA>,
     cert_cache: Option<Cache<String, SignedCert>>,
     handler: Option<H>,
@@ -38,14 +37,12 @@ pub struct MitmProxy<A: ToSocketAddrs, H: HttpHandler> {
     http_client: Client<HttpsConnector<HttpConnector>, Body>,
 }
 
-impl<A, H> MitmProxy<A, H>
+impl<H> MitmProxy<H>
 where
-    A: ToSocketAddrs,
     H: HttpHandler,
 {
-    pub fn builder() -> MitmProxyBuilder<A, H> {
+    pub fn builder() -> MitmProxyBuilder<H> {
         MitmProxyBuilder {
-            bind_addr: None,
             root_ca: None,
             cert_cache: None,
             handler: None,
@@ -54,18 +51,11 @@ where
     }
 }
 
-impl<A, H> MitmProxy<A, H>
+impl<H> MitmProxy<H>
 where
-    A: ToSocketAddrs + Send + Sync + 'static,
     H: HttpHandler + Send + Sync + 'static,
 {
-    pub async fn start(mut self) -> anyhow::Result<()> {
-        let Some(addr) = &self.bind_addr else {
-            warn!("No bind address");
-            return Ok(());
-        };
-
-        let listener = TcpListener::bind(addr).await?;
+    pub async fn start(self, listener: TcpListener) -> anyhow::Result<()> {
         info!("Proxy listening on {}", listener.local_addr()?);
 
         let (shutdown_tx, mut shutdown_rx) = match self.shutdown_tx {
@@ -366,17 +356,15 @@ where
 }
 
 #[derive(Default)]
-pub struct MitmProxyBuilder<A: ToSocketAddrs, H: HttpHandler> {
-    bind_addr: Option<A>,
+pub struct MitmProxyBuilder<H: HttpHandler> {
     root_ca: Option<RootCA>,
     cert_cache: Option<Cache<String, SignedCert>>,
     handler: Option<H>,
     shutdown_tx: Option<broadcast::Sender<()>>,
 }
 
-impl<A, H> MitmProxyBuilder<A, H>
+impl<H> MitmProxyBuilder<H>
 where
-    A: ToSocketAddrs,
     H: HttpHandler,
 {
     pub fn with_root_ca(mut self, root_ca: Option<RootCA>) -> Self {
@@ -386,11 +374,6 @@ where
 
     pub fn with_handler(mut self, handler: H) -> Self {
         self.handler = Some(handler);
-        self
-    }
-
-    pub fn with_addr(mut self, addr: A) -> Self {
-        self.bind_addr = Some(addr);
         self
     }
 
@@ -404,9 +387,8 @@ where
         self
     }
 
-    pub fn build(self) -> MitmProxy<A, H> {
+    pub fn build(self) -> MitmProxy<H> {
         MitmProxy {
-            bind_addr: self.bind_addr,
             root_cert: self.root_ca,
             cert_cache: self.cert_cache,
             handler: self.handler,

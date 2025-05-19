@@ -10,10 +10,10 @@ const mockData = Array.from({ length: 5 }).map((_, index) => ({
 </script>
 
 <template>
-  <Splitter class="h-full" :gutter-size="8">
-    <SplitterPanel>
+  <Splitter class="h-full" :gutter-size="6">
+    <SplitterPanel :size="70" :min-size="60">
       <div class="bg-surface-0 h-full overflow-hidden rounded-lg">
-        <DataTable :value="mockData" striped-rows size="small">
+        <DataTable class="text-sm" :value="mockData" striped-rows size="small">
           <Column field="id" header="ID"></Column>
           <Column field="method" header="Method"></Column>
           <Column field="protocol" header="Protocol"></Column>
@@ -24,7 +24,7 @@ const mockData = Array.from({ length: 5 }).map((_, index) => ({
       </div>
     </SplitterPanel>
 
-    <SplitterPanel>
+    <SplitterPanel :size="30" :min-size="20">
       <div class="bg-surface-0 h-full overflow-hidden rounded-lg"></div>
     </SplitterPanel>
   </Splitter>

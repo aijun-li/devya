@@ -2,11 +2,13 @@ use std::path::{Path, PathBuf};
 
 use anyhow::anyhow;
 use quick_cache::sync::Cache;
-use tauri::Manager;
+use tauri::{Emitter, Manager, State};
+use tokio::{net::TcpListener, sync::broadcast};
 
 use crate::{
     handler::ProxyHandler,
     mitm::{MitmProxy, RootCA},
+    state::ProxyState,
 };
 
 fn get_app_local_data_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
@@ -62,23 +64,54 @@ pub async fn install_ca(app: tauri::AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn start_proxy(app: tauri::AppHandle) -> Result<(), String> {
+pub async fn start_proxy(
+    port: u16,
+    app: tauri::AppHandle,
+    proxy_state: State<'_, ProxyState>,
+) -> Result<(), String> {
+    let mut proxy_state = proxy_state.lock().await;
+
+    if let Some(running_port) = proxy_state.port {
+        if running_port == port {
+            return Ok(());
+        }
+    }
+
+    let listener = TcpListener::bind(("127.0.0.1", port))
+        .await
+        .map_err(|e| e.to_string())?;
+
+    proxy_state.port = Some(port);
+
+    // shutdown previous proxy first
+    let shutdown_tx = proxy_state.shutdown_tx.take();
+    if let Some(tx) = shutdown_tx {
+        let _ = tx.send(());
+    }
+
     let app_local_data_dir = get_app_local_data_dir(&app)?;
     let (ca_cert_path, ca_key_path) = get_cert_path(&app_local_data_dir);
 
-    let root_ca = match check_ca_installed(app).await {
+    let app_clone = app.clone();
+    let root_ca = match check_ca_installed(app_clone).await {
         Ok(true) => RootCA::read_from_file(ca_cert_path, ca_key_path).await,
         _ => None,
     };
 
+    let (tx, _) = broadcast::channel::<()>(1);
+
+    proxy_state.shutdown_tx = Some(tx.clone());
+
     tokio::spawn(async move {
+        let _ = app.emit("proxy-started", ());
         let proxy = MitmProxy::builder()
             .with_handler(ProxyHandler)
             .with_root_ca(root_ca)
             .with_cert_cache(Cache::new(128))
-            .with_addr("127.0.0.1:7777")
+            .with_shutdown(tx)
             .build();
-        let _ = proxy.start().await;
+        let _ = proxy.start(listener).await;
+        let _ = app.emit("proxy-stopped", ());
     });
 
     Ok(())

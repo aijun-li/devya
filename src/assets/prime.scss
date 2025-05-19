@@ -1,0 +1,8 @@
+/* overwrite prime vue style */
+html:root {
+  --p-splitter-gutter-background: transparent;
+  --p-splitter-background: transparent;
+  --p-splitter-border-color: transparent;
+  --p-splitter-handle-size: 100%;
+  --p-splitter-handle-focus-ring-color: red;
+}

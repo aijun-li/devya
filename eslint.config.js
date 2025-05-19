@@ -31,6 +31,7 @@ export default defineConfig([
     rules: {
       '@typescript-eslint/no-empty-object-type': 'off',
       'vue/multi-word-component-names': 'off',
+      '@typescript-eslint/no-explicit-any': 'warn',
     },
   },
 ]);
