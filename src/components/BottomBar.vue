@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { checkCaInstalled, installCa } from '@/commands';
 import { useQuery } from '@tanstack/vue-query';
+import { invoke } from '@tauri-apps/api/core';
+import { ref } from 'vue';
+
+const proxyOn = ref(false);
+
+invoke('start_proxy').then(() => {
+  proxyOn.value = true;
+});
 
 const { data: caInstalled, refetch: reCheckCa } = useQuery({
   queryKey: [checkCaInstalled.name],
@@ -22,14 +30,17 @@ async function onHttpsClick() {
   >
     <div class="flex items-center justify-between px-2 py-0.5">
       <div class="flex items-center">
-        <div class="mr-1 ml-2 h-1.5 w-1.5 rounded-full bg-green-700"></div>
+        <div
+          class="mr-1 ml-2 h-1.5 w-1.5 rounded-full"
+          :class="[proxyOn ? 'bg-green-700' : 'bg-red-700']"
+        ></div>
         <Button
           class="p-1! py-0.5! text-xs!"
           severity="secondary"
           variant="text"
           size="small"
         >
-          Listening on 127.0.0.1:7777
+          {{ proxyOn ? 'Listening on 127.0.0.1:7777' : 'Proxy stopped' }}
         </Button>
       </div>
       <Button

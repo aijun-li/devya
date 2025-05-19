@@ -29,7 +29,7 @@ async fn test_proxy() {
     let proxy = MitmProxy::builder()
         .with_addr("127.0.0.1:8080")
         .with_handler(TestHandler)
-        .with_root_ca(root_ca)
+        .with_root_ca(Some(root_ca))
         .with_shutdown(shutdown_tx.clone())
         .build();
 

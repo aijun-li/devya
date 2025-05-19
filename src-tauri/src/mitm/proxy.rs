@@ -379,8 +379,8 @@ where
     A: ToSocketAddrs,
     H: HttpHandler,
 {
-    pub fn with_root_ca(mut self, root_ca: RootCA) -> Self {
-        self.root_ca = Some(root_ca);
+    pub fn with_root_ca(mut self, root_ca: Option<RootCA>) -> Self {
+        self.root_ca = root_ca;
         self
     }
 
