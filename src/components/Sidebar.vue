@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useRoute, useRouter } from 'vue-router';
 import IconLucideFileJson from '~icons/lucide/file-json.vue';
 import IconLucideSettings from '~icons/lucide/settings.vue';
 import IconLucideSquareActivity from '~icons/lucide/square-activity.vue';
@@ -8,19 +9,25 @@ const groups = [
     {
       key: 'network',
       icon: IconLucideSquareActivity,
+      path: '/network',
     },
     {
       key: 'rules',
       icon: IconLucideFileJson,
+      path: '/rules',
     },
   ],
   [
     {
       key: 'settings',
       icon: IconLucideSettings,
+      path: '/settings',
     },
   ],
 ];
+
+const route = useRoute();
+const router = useRouter();
 </script>
 
 <template>
@@ -36,6 +43,8 @@ const groups = [
         icon="pi"
         severity="contrast"
         variant="text"
+        :raised="route.path === config.path"
+        @click="router.push(config.path)"
       >
         <component :is="config.icon" />
       </Button>
