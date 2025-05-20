@@ -12,3 +12,10 @@ export async function installCa() {
 export async function startProxy(port: number) {
   await invoke('start_proxy', { port });
 }
+
+export async function checkProxyRunning() {
+  const result = await invoke<{ port?: number; running_count: number }>(
+    'check_proxy_running',
+  );
+  return result;
+}

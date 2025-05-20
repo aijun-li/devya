@@ -101,6 +101,7 @@ pub async fn start_proxy(
     let (tx, _) = broadcast::channel::<()>(1);
 
     proxy_state.shutdown_tx = Some(tx.clone());
+    proxy_state.running_count += 1;
 
     tokio::spawn(async move {
         let _ = app.emit("proxy-started", ());
@@ -112,7 +113,28 @@ pub async fn start_proxy(
             .build();
         let _ = proxy.start(listener).await;
         let _ = app.emit("proxy-stopped", ());
+
+        let proxy_state = app.state::<ProxyState>();
+        let mut proxy_state = proxy_state.lock().await;
+        proxy_state.running_count += 1;
     });
 
     Ok(())
+}
+
+#[derive(serde::Serialize)]
+pub struct CheckProxyRunningResp {
+    port: Option<u16>,
+    running_count: usize,
+}
+
+#[tauri::command]
+pub async fn check_proxy_running(
+    proxy_state: State<'_, ProxyState>,
+) -> Result<CheckProxyRunningResp, String> {
+    let proxy_state = proxy_state.lock().await;
+    Ok(CheckProxyRunningResp {
+        port: proxy_state.port,
+        running_count: proxy_state.running_count,
+    })
 }

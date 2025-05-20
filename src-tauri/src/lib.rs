@@ -1,4 +1,4 @@
-use state::{ProxyState, ProxyStateInner};
+use state::ProxyStateInner;
 use tauri::Manager;
 use tokio::sync::Mutex;
 
@@ -16,12 +16,14 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::check_ca_installed,
             commands::install_ca,
-            commands::start_proxy
+            commands::start_proxy,
+            commands::check_proxy_running
         ])
         .setup(|app| {
             app.manage(Mutex::new(ProxyStateInner {
                 shutdown_tx: None,
                 port: None,
+                running_count: 0,
             }));
             Ok(())
         })

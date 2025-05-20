@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { checkCaInstalled, installCa } from '@/commands';
+import { checkCaInstalled, installCa, startProxy } from '@/commands';
 import { useProxyStore } from '@/stores/proxy';
 import { useQuery } from '@tanstack/vue-query';
+import { nextTick, ref, useTemplateRef } from 'vue';
 
-const { isProxyOn } = useProxyStore();
+const { isProxyOn, port } = useProxyStore();
 
 const { data: caInstalled, refetch: reCheckCa } = useQuery({
   queryKey: [checkCaInstalled.name],
@@ -16,6 +17,34 @@ async function onHttpsClick() {
   }
   await installCa();
   await reCheckCa();
+}
+
+const newPort = ref(port.value);
+const newPortInvalid = ref('');
+
+const portPopover = useTemplateRef('port-popover');
+const portInput = useTemplateRef<any>('port-input');
+// const restartPopover = useTemplateRef('restart-popover');
+
+async function onOpenPortPopover(event: Event) {
+  newPort.value = port.value;
+  newPortInvalid.value = '';
+  portPopover.value?.toggle(event);
+  await nextTick();
+  portInput.value?.$refs?.input?.$el?.focus?.();
+}
+
+async function onChangePort() {
+  if (!newPort.value || newPort.value < 1 || newPort.value > 65535) {
+    newPortInvalid.value = '';
+    return;
+  }
+  try {
+    await startProxy(newPort.value);
+    port.value = newPort.value;
+  } catch (error) {
+    newPortInvalid.value = (error as Error).message;
+  }
 }
 </script>
 
@@ -30,14 +59,26 @@ async function onHttpsClick() {
           :class="[isProxyOn ? 'bg-green-700' : 'bg-red-700']"
         />
         <Button
-          class="p-1! py-0.5! text-xs!"
+          v-if="isProxyOn"
+          class="flex p-1! py-0.5! text-xs!"
+          severity="secondary"
+          variant="text"
+          size="small"
+          @click="onOpenPortPopover"
+        >
+          Listening on 127.0.0.1:{{ port }}
+        </Button>
+        <Button
+          v-else
+          class="flex p-1! py-0.5! text-xs!"
           severity="secondary"
           variant="text"
           size="small"
         >
-          {{ isProxyOn ? 'Listening on 127.0.0.1:7777' : 'Proxy stopped' }}
+          Proxy stopped
         </Button>
       </div>
+
       <Button
         class="flex items-center gap-1! p-1! text-xs!"
         :class="[caInstalled ? 'text-green-700!' : 'cursor-pointer']"
@@ -50,5 +91,35 @@ async function onHttpsClick() {
         TLS {{ caInstalled ? 'Enabled' : 'Disabled' }}
       </Button>
     </div>
+
+    <Popover ref="port-popover">
+      <div class="flex items-center gap-1">
+        <FloatLabel variant="on">
+          <InputNumber
+            ref="port-input"
+            v-model="newPort"
+            input-id="change-port"
+            :use-grouping="false"
+            :min="1"
+            :max="65535"
+            placeholder="1-65535"
+            size="small"
+            pt:pcInputText:root:class="w-[120px]"
+            :invalid="Boolean(newPortInvalid)"
+            @input="newPortInvalid = ''"
+          />
+          <label for="change-port">Change Port</label>
+        </FloatLabel>
+
+        <Button size="small" @click="onChangePort">OK</Button>
+      </div>
+      <Message v-if="Boolean(newPortInvalid)" severity="error" size="small">
+        {{ newPortInvalid }}
+      </Message>
+    </Popover>
+
+    <Popover ref="restart-popover">
+      <div>restart</div>
+    </Popover>
   </div>
 </template>
