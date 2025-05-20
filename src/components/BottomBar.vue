@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { checkCaInstalled, installCa, startProxy } from '@/commands';
+import { useNetworkStore } from '@/stores/network';
 import { useProxyStore } from '@/stores/proxy';
 import { useQuery } from '@tanstack/vue-query';
 import { nextTick, ref, useTemplateRef } from 'vue';
 
 const { isProxyOn, port } = useProxyStore();
+
+const { createChannel } = useNetworkStore();
 
 const { data: caInstalled, refetch: reCheckCa } = useQuery({
   queryKey: [checkCaInstalled.name],
@@ -39,7 +42,7 @@ async function onChangePort() {
     return;
   }
   try {
-    await startProxy(newPort.value);
+    await startProxy(newPort.value, createChannel());
     port.value = newPort.value;
     portPopover.value?.hide();
   } catch (error) {

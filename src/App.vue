@@ -3,9 +3,11 @@ import { onMounted, onUnmounted } from 'vue';
 import { checkProxyRunning, startProxy } from './commands';
 import { listenEvents } from './events';
 import { TEvent } from './events/types';
+import { useNetworkStore } from './stores/network';
 import { useProxyStore } from './stores/proxy';
 
 const { proxyOnCount, port } = useProxyStore();
+const { createChannel } = useNetworkStore();
 
 let unlisten: (() => void) | undefined;
 onMounted(async () => {
@@ -24,7 +26,7 @@ onMounted(async () => {
   });
 
   if (running_count <= 0) {
-    startProxy(7777).then(() => {
+    startProxy(7777, createChannel()).then(() => {
       port.value = 7777;
     });
   }

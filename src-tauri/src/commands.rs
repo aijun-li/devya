@@ -68,6 +68,7 @@ pub async fn start_proxy(
     port: u16,
     app: tauri::AppHandle,
     proxy_state: State<'_, ProxyState>,
+    channel: tauri::ipc::Channel<String>,
 ) -> Result<(), String> {
     let mut proxy_state = proxy_state.lock().await;
 
@@ -106,7 +107,7 @@ pub async fn start_proxy(
     tokio::spawn(async move {
         let _ = app.emit("proxy-started", ());
         let proxy = MitmProxy::builder()
-            .with_handler(ProxyHandler)
+            .with_handler(ProxyHandler::new(channel))
             .with_root_ca(root_ca)
             .with_cert_cache(Cache::new(128))
             .with_shutdown(tx)

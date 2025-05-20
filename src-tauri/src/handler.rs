@@ -1,13 +1,21 @@
 use crate::mitm::{self, HttpHandler};
 
-pub struct ProxyHandler;
+pub struct ProxyHandler {
+    channel: tauri::ipc::Channel<String>,
+}
+
+impl ProxyHandler {
+    pub fn new(channel: tauri::ipc::Channel<String>) -> Self {
+        Self { channel }
+    }
+}
 
 impl HttpHandler for ProxyHandler {
     async fn handle_request(
         &self,
         req: hyper::Request<mitm::Body>,
     ) -> anyhow::Result<mitm::RequestOrResponse> {
-        // println!("{:?}", req);
+        let _ = self.channel.send(req.uri().to_string());
         Ok(mitm::RequestOrResponse::Request(req))
     }
 
