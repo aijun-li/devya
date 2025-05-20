@@ -24,7 +24,6 @@ const newPortInvalid = ref('');
 
 const portPopover = useTemplateRef('port-popover');
 const portInput = useTemplateRef<any>('port-input');
-// const restartPopover = useTemplateRef('restart-popover');
 
 async function onOpenPortPopover(event: Event) {
   newPort.value = port.value;
@@ -42,8 +41,9 @@ async function onChangePort() {
   try {
     await startProxy(newPort.value);
     port.value = newPort.value;
+    portPopover.value?.hide();
   } catch (error) {
-    newPortInvalid.value = (error as Error).message;
+    newPortInvalid.value = error as string;
   }
 }
 </script>
@@ -59,23 +59,17 @@ async function onChangePort() {
           :class="[isProxyOn ? 'bg-green-700' : 'bg-red-700']"
         />
         <Button
-          v-if="isProxyOn"
           class="flex p-1! py-0.5! text-xs!"
           severity="secondary"
           variant="text"
           size="small"
           @click="onOpenPortPopover"
         >
-          Listening on 127.0.0.1:{{ port }}
-        </Button>
-        <Button
-          v-else
-          class="flex p-1! py-0.5! text-xs!"
-          severity="secondary"
-          variant="text"
-          size="small"
-        >
-          Proxy stopped
+          {{
+            isProxyOn
+              ? `Listening on 127.0.0.1:${port}`
+              : 'Proxy stopped (click to restart)'
+          }}
         </Button>
       </div>
 
@@ -104,22 +98,24 @@ async function onChangePort() {
             :max="65535"
             placeholder="1-65535"
             size="small"
-            pt:pcInputText:root:class="w-[120px]"
             :invalid="Boolean(newPortInvalid)"
             @input="newPortInvalid = ''"
+            @keydown.enter="onChangePort"
           />
-          <label for="change-port">Change Port</label>
+          <label for="change-port">Port</label>
         </FloatLabel>
 
         <Button size="small" @click="onChangePort">OK</Button>
       </div>
-      <Message v-if="Boolean(newPortInvalid)" severity="error" size="small">
+      <Message
+        v-if="Boolean(newPortInvalid)"
+        pt:text:class="text-xs!"
+        severity="error"
+        size="small"
+        variant="simple"
+      >
         {{ newPortInvalid }}
       </Message>
-    </Popover>
-
-    <Popover ref="restart-popover">
-      <div>restart</div>
     </Popover>
   </div>
 </template>

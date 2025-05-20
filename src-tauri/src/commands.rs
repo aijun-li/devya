@@ -77,9 +77,9 @@ pub async fn start_proxy(
         }
     }
 
-    let listener = TcpListener::bind(("127.0.0.1", port))
-        .await
-        .map_err(|e| e.to_string())?;
+    let listener = TcpListener::bind(("0.0.0.0", port)).await;
+
+    let listener = listener.map_err(|e| e.to_string())?;
 
     proxy_state.port = Some(port);
 
@@ -116,7 +116,7 @@ pub async fn start_proxy(
 
         let proxy_state = app.state::<ProxyState>();
         let mut proxy_state = proxy_state.lock().await;
-        proxy_state.running_count += 1;
+        proxy_state.running_count -= 1;
     });
 
     Ok(())
