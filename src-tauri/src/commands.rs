@@ -66,9 +66,9 @@ pub async fn install_ca(app: tauri::AppHandle) -> Result<(), String> {
 #[tauri::command]
 pub async fn start_proxy(
     port: u16,
+    channel: tauri::ipc::Channel<String>,
     app: tauri::AppHandle,
     proxy_state: State<'_, ProxyState>,
-    channel: tauri::ipc::Channel<String>,
 ) -> Result<(), String> {
     let mut proxy_state = proxy_state.lock().await;
 
@@ -120,6 +120,15 @@ pub async fn start_proxy(
         proxy_state.running_count -= 1;
     });
 
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn stop_proxy(proxy_state: State<'_, ProxyState>) -> Result<(), String> {
+    let mut proxy_state = proxy_state.lock().await;
+    if let Some(tx) = proxy_state.shutdown_tx.take() {
+        let _ = tx.send(());
+    }
     Ok(())
 }
 

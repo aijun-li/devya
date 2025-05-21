@@ -17,6 +17,7 @@ pub fn run() {
             commands::check_ca_installed,
             commands::install_ca,
             commands::start_proxy,
+            commands::stop_proxy,
             commands::check_proxy_running
         ])
         .setup(|app| {

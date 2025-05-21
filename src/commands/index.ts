@@ -13,6 +13,10 @@ export async function startProxy(port: number, channel: Channel<string>) {
   await invoke('start_proxy', { port, channel });
 }
 
+export async function stopProxy() {
+  await invoke('stop_proxy');
+}
+
 export async function checkProxyRunning() {
   const result = await invoke<{ port?: number; running_count: number }>(
     'check_proxy_running',

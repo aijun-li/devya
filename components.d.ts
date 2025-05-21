@@ -19,7 +19,6 @@ declare module 'vue' {
     IconFluentSquareMultiple16Regular: typeof import('~icons/fluent/square-multiple16-regular')['default']
     IconMdiHttps: typeof import('~icons/mdi/https')['default']
     InputNumber: typeof import('primevue/inputnumber')['default']
-    InputText: typeof import('primevue/inputtext')['default']
     Message: typeof import('primevue/message')['default']
     Popover: typeof import('primevue/popover')['default']
     RouterLink: typeof import('vue-router')['RouterLink']

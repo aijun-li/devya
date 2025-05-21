@@ -105,7 +105,7 @@ where
                     }
                 }
                 _ = shutdown_rx.recv() => {
-                    info!("Shutting down proxy");
+                    info!("Shutting down proxy on {}", listener.local_addr()?);
                     break;
                 }
             }
