@@ -1,4 +1,3 @@
-import Aura from '@primeuix/themes/aura';
 import { VueQueryPlugin } from '@tanstack/vue-query';
 import { createPinia } from 'pinia';
 import PrimeVue from 'primevue/config';
@@ -9,12 +8,13 @@ import App from './App.vue';
 import './assets/base.css';
 import './assets/prime.scss';
 import './assets/tailwind.css';
+import { Noir } from './theme';
 
 const app = createApp(App);
 
 app.use(PrimeVue, {
   theme: {
-    preset: Aura,
+    preset: Noir,
   },
 });
 

@@ -53,7 +53,7 @@ async function onChangePort() {
 
 <template>
   <div
-    class="text-surface-500 sticky bottom-0 flex flex-col bg-stone-300 text-xs"
+    class="text-surface-500 bg-surface-300 sticky bottom-0 flex flex-col text-xs"
   >
     <div class="flex items-center justify-between px-2 py-0.5">
       <div class="flex items-center">

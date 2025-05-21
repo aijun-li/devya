@@ -20,6 +20,7 @@ declare module 'vue' {
     IconMdiHttps: typeof import('~icons/mdi/https')['default']
     InputNumber: typeof import('primevue/inputnumber')['default']
     Message: typeof import('primevue/message')['default']
+    PanelCard: typeof import('./src/components/PanelCard.vue')['default']
     Popover: typeof import('primevue/popover')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']

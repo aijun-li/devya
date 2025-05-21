@@ -37,7 +37,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex h-screen w-screen flex-col bg-stone-200">
+  <div class="bg-surface-200 flex h-screen w-screen flex-col">
     <TitleBar />
 
     <div class="flex min-h-0 flex-1 overflow-auto">

@@ -44,7 +44,7 @@ watchEffect(() => {
 <template>
   <Splitter ref="splitter" class="h-full" :gutter-size="6">
     <SplitterPanel :size="70" :min-size="50">
-      <div class="bg-surface-0 h-full overflow-hidden rounded-lg">
+      <PanelCard>
         <DataTable
           class="text-sm"
           :value="data"
@@ -64,18 +64,22 @@ watchEffect(() => {
           <Column field="host" header="Host"></Column>
           <Column class="max-w-[300px]" field="path" header="Path"></Column>
           <Column field="code" header="Code"></Column>
+
+          <template #empty>
+            <div class="flex items-center justify-center">No Data</div>
+          </template>
         </DataTable>
-      </div>
+      </PanelCard>
     </SplitterPanel>
 
     <SplitterPanel v-if="activeItem" :size="30" :min-size="30">
-      <div class="bg-surface-0 h-full overflow-hidden rounded-lg p-2">
+      <PanelCard class="p-2">
         <div>{{ activeItem.method }}</div>
         <div>{{ activeItem.protocol }}</div>
         <div>{{ activeItem.host }}</div>
         <div class="break-all">{{ activeItem.path }}</div>
         <div>{{ activeItem.code }}</div>
-      </div>
+      </PanelCard>
     </SplitterPanel>
   </Splitter>
 </template>
