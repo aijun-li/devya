@@ -38,3 +38,4 @@ quick_cache = "0.6.13"
 hyper-rustls = { version = "0.27.5", features = ["webpki-roots", "http2"] }
 time = "0.3.41"
 tauri-plugin-os = "2"
+tauri-plugin-store = "2"

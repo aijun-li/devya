@@ -11,12 +11,12 @@ use crate::{
     state::ProxyState,
 };
 
-fn get_app_local_data_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
-    let app_local_data_dir = app
+fn get_app_data_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    let app_data_dir = app
         .path()
-        .app_local_data_dir()
+        .app_data_dir()
         .map_err(|err| anyhow!("{}", err).to_string())?;
-    Ok(app_local_data_dir)
+    Ok(app_data_dir)
 }
 
 fn get_cert_path<T>(local_data_dir: T) -> (PathBuf, PathBuf)
@@ -42,21 +42,21 @@ where
 
 #[tauri::command]
 pub async fn check_ca_installed(app: tauri::AppHandle) -> Result<bool, String> {
-    let app_local_data_dir = get_app_local_data_dir(&app)?;
+    let app_data_dir = get_app_data_dir(&app)?;
 
-    create_ca_if_not_exists(&app_local_data_dir)
+    create_ca_if_not_exists(&app_data_dir)
         .await
         .map_err(|err| err.to_string())?;
-    let (ca_cert_path, _) = get_cert_path(&app_local_data_dir);
+    let (ca_cert_path, _) = get_cert_path(&app_data_dir);
     let installed = RootCA::check_installed(ca_cert_path).map_err(|err| err.to_string())?;
     Ok(installed)
 }
 
 #[tauri::command]
 pub async fn install_ca(app: tauri::AppHandle) -> Result<(), String> {
-    let app_local_data_dir = get_app_local_data_dir(&app)?;
+    let app_data_dir = get_app_data_dir(&app)?;
 
-    let (ca_cert_path, _) = get_cert_path(&app_local_data_dir);
+    let (ca_cert_path, _) = get_cert_path(&app_data_dir);
 
     RootCA::install(ca_cert_path).map_err(|err| err.to_string())?;
 
@@ -90,8 +90,8 @@ pub async fn start_proxy(
         let _ = tx.send(());
     }
 
-    let app_local_data_dir = get_app_local_data_dir(&app)?;
-    let (ca_cert_path, ca_key_path) = get_cert_path(&app_local_data_dir);
+    let app_data_dir = get_app_data_dir(&app)?;
+    let (ca_cert_path, ca_key_path) = get_cert_path(&app_data_dir);
 
     let app_clone = app.clone();
     let root_ca = match check_ca_installed(app_clone).await {

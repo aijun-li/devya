@@ -1,20 +1,24 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue';
 import { checkProxyRunning, startProxy } from './commands';
+import { DEFAULT_PORT } from './const';
 import { listenEvents } from './events';
 import { TEvent } from './events/types';
+import { useSettings } from './hooks/use-settings';
 import { useNetworkStore } from './stores/network';
 import { useProxyStore } from './stores/proxy';
 
-const { proxyOnCount, port } = useProxyStore();
+const { proxyOnCount, updateProxyPort } = useProxyStore();
 const { createChannel } = useNetworkStore();
+
+const { getSettings } = useSettings();
 
 let unlisten: (() => void) | undefined;
 onMounted(async () => {
   const { port: runningPort, running_count } = await checkProxyRunning();
 
   proxyOnCount.value = running_count;
-  port.value = runningPort;
+  updateProxyPort(runningPort);
 
   unlisten = await listenEvents({
     [TEvent.ProxyStarted]: () => {
@@ -26,8 +30,9 @@ onMounted(async () => {
   });
 
   if (running_count <= 0) {
-    startProxy(7777, createChannel()).then(() => {
-      port.value = 7777;
+    const initPort = (await getSettings('port')) ?? DEFAULT_PORT;
+    startProxy(initPort, createChannel()).then(() => {
+      updateProxyPort(initPort);
     });
   }
 });

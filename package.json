@@ -16,6 +16,7 @@
     "@tauri-apps/api": "^2.5.0",
     "@tauri-apps/plugin-opener": "^2.2.7",
     "@tauri-apps/plugin-os": "~2.2.1",
+    "@tauri-apps/plugin-store": "~2.2.0",
     "pinia": "^3.0.2",
     "primevue": "^4.3.4",
     "tailwindcss-primeui": "^0.6.1",

@@ -5,7 +5,7 @@ import { useProxyStore } from '@/stores/proxy';
 import { useQuery } from '@tanstack/vue-query';
 import { nextTick, ref, useTemplateRef } from 'vue';
 
-const { isProxyOn, port } = useProxyStore();
+const { isProxyOn, port, updateProxyPort } = useProxyStore();
 
 const { createChannel } = useNetworkStore();
 
@@ -43,7 +43,7 @@ async function onChangePort() {
   }
   try {
     await startProxy(newPort.value, createChannel());
-    port.value = newPort.value;
+    updateProxyPort(newPort.value);
     portPopover.value?.hide();
   } catch (error) {
     newPortInvalid.value = error as string;

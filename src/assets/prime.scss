@@ -6,3 +6,7 @@ html:root {
   --p-splitter-handle-size: 100%;
   --p-splitter-handle-focus-ring-color: red;
 }
+
+.p-splitter {
+  border: none !important;
+}
