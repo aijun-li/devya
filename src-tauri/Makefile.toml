@@ -1,0 +1,21 @@
+[config]
+default_to_workspace = false
+
+[env.development]
+DATABASE_URL = "sqlite://dev.db?mode=rwc"
+
+[tasks.entity]
+condition = { profiles = ["development"] }
+install_crate = { crate_name = "sea-orm-cli", binary = "sea-orm-cli", test_arg = "--help" }
+command = "sea-orm-cli"
+args = [
+    "generate",
+    "entity",
+    "--with-serde",
+    "both",
+    "--lib",
+    "--model-extra-attributes",
+    '''serde(rename_all = "camelCase")''',
+    "-o",
+    "entity/src",
+]

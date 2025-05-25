@@ -17,6 +17,11 @@ declare module 'vue' {
     IconFluentMaximize16Regular: typeof import('~icons/fluent/maximize16-regular')['default']
     IconFluentMinimize16Regular: typeof import('~icons/fluent/minimize16-regular')['default']
     IconFluentSquareMultiple16Regular: typeof import('~icons/fluent/square-multiple16-regular')['default']
+    IconLucideChevronDown: typeof import('~icons/lucide/chevron-down')['default']
+    IconLucideChevronRight: typeof import('~icons/lucide/chevron-right')['default']
+    IconLucideFilePlus: typeof import('~icons/lucide/file-plus')['default']
+    IconLucideFolder: typeof import('~icons/lucide/folder')['default']
+    IconLucideFolderPlus: typeof import('~icons/lucide/folder-plus')['default']
     IconMdiHttps: typeof import('~icons/mdi/https')['default']
     InputNumber: typeof import('primevue/inputnumber')['default']
     Message: typeof import('primevue/message')['default']
@@ -28,6 +33,7 @@ declare module 'vue' {
     Splitter: typeof import('primevue/splitter')['default']
     SplitterPanel: typeof import('primevue/splitterpanel')['default']
     TitleBar: typeof import('./src/components/TitleBar.vue')['default']
+    Tree: typeof import('primevue/tree')['default']
     WindowControls: typeof import('./src/components/WindowControls.vue')['default']
   }
 }

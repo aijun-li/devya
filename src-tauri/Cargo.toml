@@ -1,3 +1,6 @@
+[workspace]
+members = [".", "entity", "migration", "db-service"]
+
 [package]
 name = "devya"
 version = "0.1.0"
@@ -39,3 +42,11 @@ hyper-rustls = { version = "0.27.5", features = ["webpki-roots", "http2"] }
 time = "0.3.41"
 tauri-plugin-os = "2"
 tauri-plugin-store = "2"
+sea-orm = { version = "1.1.0", features = [
+    "sqlx-sqlite",
+    "runtime-tokio-rustls",
+    "macros",
+] }
+migration = { path = "migration" }
+db-service = { path = "db-service" }
+entity = { path = "entity" }

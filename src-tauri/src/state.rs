@@ -1,3 +1,4 @@
+use sea_orm::DbConn;
 use tokio::sync::{broadcast, Mutex};
 
 pub struct ProxyStateInner {
@@ -7,3 +8,7 @@ pub struct ProxyStateInner {
 }
 
 pub type ProxyState = Mutex<ProxyStateInner>;
+
+pub struct DbState {
+    pub conn: DbConn,
+}
