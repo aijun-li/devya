@@ -17,6 +17,7 @@ export default defineConfig(async () => ({
     vue(),
     tailwindcss(),
     Icons({
+      scale: 1,
       autoInstall: true,
     }),
     Components({

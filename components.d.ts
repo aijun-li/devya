@@ -11,6 +11,7 @@ declare module 'vue' {
     BottomBar: typeof import('./src/components/BottomBar.vue')['default']
     Button: typeof import('primevue/button')['default']
     Column: typeof import('primevue/column')['default']
+    ContextMenu: typeof import('primevue/contextmenu')['default']
     DataTable: typeof import('primevue/datatable')['default']
     FloatLabel: typeof import('primevue/floatlabel')['default']
     IconFluentDismiss16Regular: typeof import('~icons/fluent/dismiss16-regular')['default']
