@@ -26,3 +26,11 @@ pub async fn upsert_rule_dir(
 
     Ok(result.last_insert_id)
 }
+
+#[tauri::command]
+pub async fn delete_rule_dir(id: i32, db_state: State<'_, DbState>) -> Result<(), String> {
+    RuleDirMutation::delete(&db_state.conn, id)
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}

@@ -34,3 +34,8 @@ export async function upsertRuleDir(req: UpsertRuleDirReq) {
   const result = await invoke<string>('upsert_rule_dir', req);
   return result;
 }
+
+export async function deleteRuleDir(id: number) {
+  const result = await invoke('delete_rule_dir', { id });
+  return result;
+}

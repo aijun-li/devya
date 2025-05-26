@@ -1,5 +1,7 @@
 use entity::{rule_dir, rule_dir::Column, rule_dir::Entity as RuleDir};
-use sea_orm::{sea_query::OnConflict, ActiveValue::Set, DbConn, DbErr, EntityTrait, InsertResult};
+use sea_orm::{
+    sea_query::OnConflict, ActiveValue::Set, DbConn, DbErr, DeleteResult, EntityTrait, InsertResult,
+};
 
 pub struct RuleDirQuery;
 
@@ -37,5 +39,9 @@ impl RuleDirMutation {
             )
             .exec(db)
             .await
+    }
+
+    pub async fn delete(db: &DbConn, id: i32) -> Result<DeleteResult, DbErr> {
+        RuleDir::delete_by_id(id).exec(db).await
     }
 }

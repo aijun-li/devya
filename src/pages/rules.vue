@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getRuleDirs, upsertRuleDir } from '@/commands';
+import { deleteRuleDir, getRuleDirs, upsertRuleDir } from '@/commands';
 import { useQuery } from '@tanstack/vue-query';
 import { Splitter } from 'primevue';
 import { MenuItem } from 'primevue/menuitem';
@@ -70,13 +70,17 @@ function onNodeToggle(node: TreeNode) {
   selectedKeys.value = { [node.key]: true };
 }
 
-const menuActiveDirId = ref<string>();
+const menuActiveDirId = ref<number>();
 const dirMenuRef = useTemplateRef('dir-menu');
 const dirMenuItems: MenuItem[] = [
   {
     label: 'Delete',
-    command: () => {
-      console.log('delete', menuActiveDirId.value);
+    command: async () => {
+      if (!menuActiveDirId.value) {
+        return;
+      }
+      await deleteRuleDir(menuActiveDirId.value);
+      await refetch();
     },
   },
 ];
@@ -120,12 +124,12 @@ const dirMenuItems: MenuItem[] = [
             :pt="{
               root: 'p-0!',
               nodeContent: 'outline-none!',
-              node: {
+              node: ({ context: { node } }) => ({
                 oncontextmenu: (event: Event) => {
-                  event.preventDefault();
+                  menuActiveDirId = Number(node.key);
                   dirMenuRef?.show(event);
                 },
-              },
+              }),
             }"
             @node-select="onNodeSelect"
             @node-unselect="onNodeUnselect"
@@ -158,7 +162,11 @@ const dirMenuItems: MenuItem[] = [
           </Tree>
         </div>
 
-        <ContextMenu ref="dir-menu" :model="dirMenuItems" />
+        <ContextMenu
+          ref="dir-menu"
+          :model="dirMenuItems"
+          @hide="menuActiveDirId = undefined"
+        />
       </PanelCard>
     </SplitterPanel>
 

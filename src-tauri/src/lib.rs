@@ -38,6 +38,7 @@ pub fn run() {
             commands::proxy::check_proxy_running,
             commands::db::get_rule_dirs,
             commands::db::upsert_rule_dir,
+            commands::db::delete_rule_dir,
         ])
         .setup(|app| {
             let conn = tauri::async_runtime::block_on(setup_db(app))?;
