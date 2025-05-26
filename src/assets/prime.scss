@@ -5,6 +5,10 @@ html:root {
   --p-splitter-border-color: transparent;
   --p-splitter-handle-size: 100%;
   --p-splitter-handle-focus-ring-color: red;
+
+  --p-tree-node-selected-background: var(--p-surface-200);
+  --p-tree-node-selected-color: var(--p-surface-950);
+  --p-tree-node-toggle-button-size: 20px;
 }
 
 .p-splitter {

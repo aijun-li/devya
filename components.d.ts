@@ -24,6 +24,7 @@ declare module 'vue' {
     IconLucideFolderPlus: typeof import('~icons/lucide/folder-plus')['default']
     IconMdiHttps: typeof import('~icons/mdi/https')['default']
     InputNumber: typeof import('primevue/inputnumber')['default']
+    InputText: typeof import('primevue/inputtext')['default']
     Message: typeof import('primevue/message')['default']
     PanelCard: typeof import('./src/components/PanelCard.vue')['default']
     Popover: typeof import('primevue/popover')['default']

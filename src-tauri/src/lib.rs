@@ -12,10 +12,10 @@ use tokio::sync::Mutex;
 
 async fn setup_db(app: &App) -> anyhow::Result<DbConn> {
     let db_url = if cfg!(debug_assertions) {
-        "sqlite://dev.db".to_string()
+        "sqlite://dev.db?mode=rwc".to_string()
     } else {
         let dir_path = app.path().app_data_dir()?;
-        format!("sqlite://{}/devya.db", dir_path.to_string_lossy())
+        format!("sqlite://{}/devya.db?mode=rwc", dir_path.to_string_lossy())
     };
 
     let conn = Database::connect(db_url).await?;
