@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { deleteRuleDir, getRuleDirs, upsertRuleDir } from '@/commands';
+import { RuleDir } from '@/commands/types';
 import { useQuery } from '@tanstack/vue-query';
 import { Splitter } from 'primevue';
 import { MenuItem } from 'primevue/menuitem';
@@ -11,12 +12,21 @@ const { data: dirs, refetch } = useQuery({
   queryFn: getRuleDirs,
 });
 
-const creatingDir = ref(false);
+const selectedKey = ref<string>();
+const selectedKeys = computed<Record<string, boolean>>(() =>
+  selectedKey.value ? { [selectedKey.value]: true } : {},
+);
+const expandedKeys = ref<Record<string, boolean>>({});
+
+const creatingDir = ref<number>();
 const newDirName = ref('');
 const creatingInputRef = useTemplateRef<any>('creating-input');
 
 function onCreateDirClick() {
-  creatingDir.value = true;
+  creatingDir.value = Number(selectedKey.value) || 0;
+  if (creatingDir.value) {
+    expandedKeys.value[creatingDir.value] = true;
+  }
   newDirName.value = '';
   nextTick(() => {
     console.log(creatingInputRef.value);
@@ -27,39 +37,53 @@ function onCreateDirClick() {
 async function onCreateDir() {
   const newName = newDirName.value.trim();
   if (!newName) {
-    creatingDir.value = false;
+    creatingDir.value = undefined;
     return;
   }
-  await upsertRuleDir({ name: newName });
+  await upsertRuleDir({
+    name: newName,
+    parentId: creatingDir.value || undefined,
+  });
   await refetch();
-  creatingDir.value = false;
+  creatingDir.value = undefined;
 }
 
-const nodes = computed(() => {
-  const list = (dirs.value ?? []).map((item) => ({
-    key: String(item.id),
-    label: item.name,
-    leaf: false,
-  })) as TreeNode[];
-
-  if (creatingDir.value) {
-    list.push({
-      key: 'new',
-      label: 'New',
-      creatingDir: true,
+const buildTree = (dir: RuleDir, creatingId?: number): TreeNode => {
+  const children = dir.dirs.map((d) => buildTree(d, creatingId));
+  if (creatingId === dir.id) {
+    children.unshift({
+      key: 'creating',
+      label: '',
       leaf: false,
+      creating: true,
     });
   }
+  return {
+    key: String(dir.id),
+    label: dir.name,
+    leaf: false,
+    children,
+  };
+};
 
+const nodes = computed<TreeNode[]>(() => {
+  const list = (dirs.value ?? []).map((dir) =>
+    buildTree(dir, creatingDir.value),
+  );
+  if (creatingDir.value === 0) {
+    list.unshift({
+      key: 'creating',
+      label: '',
+      leaf: false,
+      creating: true,
+    });
+  }
   return list;
 });
 
-const selectedKeys = ref<Record<string, boolean>>({});
-const expandedKeys = ref<Record<string, boolean>>({});
-
 function onNodeSelect(node: TreeNode) {
   expandedKeys.value[node.key] = !expandedKeys.value[node.key];
-  selectedKeys.value = { [node.key]: true };
+  selectedKey.value = node.key;
 }
 
 function onNodeUnselect(node: TreeNode) {
@@ -67,12 +91,27 @@ function onNodeUnselect(node: TreeNode) {
 }
 
 function onNodeToggle(node: TreeNode) {
-  selectedKeys.value = { [node.key]: true };
+  selectedKey.value = node.key;
 }
 
 const menuActiveDirId = ref<number>();
 const dirMenuRef = useTemplateRef('dir-menu');
 const dirMenuItems: MenuItem[] = [
+  {
+    label: 'Add Folder',
+    command: async () => {
+      if (!menuActiveDirId.value) {
+        return;
+      }
+      newDirName.value = '';
+      creatingDir.value = menuActiveDirId.value;
+      expandedKeys.value[menuActiveDirId.value] = true;
+      nextTick(() => {
+        creatingInputRef.value?.$el?.focus?.();
+      });
+    },
+  },
+  { separator: true },
   {
     label: 'Delete',
     command: async () => {
@@ -135,7 +174,7 @@ const dirMenuItems: MenuItem[] = [
             @node-unselect="onNodeUnselect"
             @node-expand="onNodeToggle"
             @node-collapse="onNodeToggle"
-            @keydown.esc="selectedKeys = {}"
+            @keydown.esc="selectedKey = undefined"
           >
             <template #nodeicon>
               <IconLucideFolder class="flex-none text-[18px]" />
@@ -146,14 +185,15 @@ const dirMenuItems: MenuItem[] = [
             </template>
             <template #default="{ node }">
               <InputText
-                v-if="node.creatingDir"
+                v-if="node.creating"
                 ref="creating-input"
                 v-model="newDirName"
                 class="px-1! py-0.5! text-xs"
                 size="small"
                 @blur="onCreateDir"
                 @keydown.enter="onCreateDir"
-                @keydown.esc="creatingDir = false"
+                @keydown.esc="creatingDir = undefined"
+                @click.stop=""
               />
               <span v-else class="relative -top-[1px] ml-1 text-sm">
                 {{ node.label }}

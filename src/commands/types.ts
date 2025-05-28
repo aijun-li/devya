@@ -4,6 +4,7 @@ export type RuleDir = {
   parentId?: number;
   createdAt: number;
   updatedAt: number;
+  dirs: RuleDir[];
 };
 
 export type UpsertRuleDirReq = {
