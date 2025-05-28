@@ -4,7 +4,7 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "rule_dir")]
+#[sea_orm(table_name = "rule_file")]
 #[serde(rename_all = "camelCase")]
 pub struct Model {
     #[sea_orm(primary_key)]
@@ -18,20 +18,18 @@ pub struct Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "Entity",
+        belongs_to = "super::rule_dir::Entity",
         from = "Column::ParentId",
-        to = "Column::Id",
+        to = "super::rule_dir::Column::Id",
         on_update = "Cascade",
         on_delete = "Cascade"
     )]
-    SelfRef,
-    #[sea_orm(has_many = "super::rule_file::Entity")]
-    RuleFile,
+    RuleDir,
 }
 
-impl Related<super::rule_file::Entity> for Entity {
+impl Related<super::rule_dir::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::RuleFile.def()
+        Relation::RuleDir.def()
     }
 }
 

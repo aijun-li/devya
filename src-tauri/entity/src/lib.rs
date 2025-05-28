@@ -3,3 +3,4 @@
 pub mod prelude;
 
 pub mod rule_dir;
+pub mod rule_file;
