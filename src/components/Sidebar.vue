@@ -35,18 +35,19 @@ const router = useRouter();
     <div
       v-for="(group, index) in groups"
       :key="index"
-      class="flex flex-col items-center gap-4"
+      class="flex flex-col items-center gap-2"
     >
       <Button
         v-for="config in group"
         :key="config.key"
+        class="h-[36px]! w-[36px]!"
         icon="pi"
         severity="contrast"
         variant="text"
         :raised="route.path === config.path"
         @click="router.push(config.path)"
       >
-        <component :is="config.icon" />
+        <component :is="config.icon" width="18" height="18" />
       </Button>
     </div>
   </div>
