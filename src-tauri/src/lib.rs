@@ -27,6 +27,7 @@ async fn setup_db(app: &App) -> anyhow::Result<DbConn> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_opener::init())
@@ -36,9 +37,9 @@ pub fn run() {
             commands::proxy::start_proxy,
             commands::proxy::stop_proxy,
             commands::proxy::check_proxy_running,
-            commands::db::get_rule_dirs,
-            commands::db::upsert_rule_dir,
-            commands::db::delete_rule_dir,
+            commands::db::get_rule_files,
+            commands::db::upsert_rule_file,
+            commands::db::delete_rule_file,
         ])
         .setup(|app| {
             let conn = tauri::async_runtime::block_on(setup_db(app))?;

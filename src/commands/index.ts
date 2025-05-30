@@ -1,5 +1,5 @@
 import { Channel, invoke } from '@tauri-apps/api/core';
-import { RuleDir, UpsertRuleDirReq } from './types';
+import { RuleFile, UpsertRuleFileReq } from './types';
 
 export async function checkCaInstalled() {
   const installed = await invoke<boolean>('check_ca_installed');
@@ -25,17 +25,17 @@ export async function checkProxyRunning() {
   return result;
 }
 
-export async function getRuleDirs() {
-  const result = await invoke<RuleDir[]>('get_rule_dirs');
+export async function getRuleFiles() {
+  const result = await invoke<RuleFile[]>('get_rule_files');
   return result;
 }
 
-export async function upsertRuleDir(req: UpsertRuleDirReq) {
-  const result = await invoke<string>('upsert_rule_dir', req);
+export async function upsertRuleFile(req: UpsertRuleFileReq) {
+  const result = await invoke<string>('upsert_rule_file', req);
   return result;
 }
 
-export async function deleteRuleDir(id: number) {
-  const result = await invoke('delete_rule_dir', { id });
+export async function deleteRuleFile(id: number) {
+  const result = await invoke('delete_rule_file', { id });
   return result;
 }

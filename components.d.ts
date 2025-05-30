@@ -20,6 +20,7 @@ declare module 'vue' {
     IconFluentSquareMultiple16Regular: typeof import('~icons/fluent/square-multiple16-regular')['default']
     IconLucideChevronDown: typeof import('~icons/lucide/chevron-down')['default']
     IconLucideChevronRight: typeof import('~icons/lucide/chevron-right')['default']
+    IconLucideFile: typeof import('~icons/lucide/file')['default']
     IconLucideFilePlus: typeof import('~icons/lucide/file-plus')['default']
     IconLucideFolder: typeof import('~icons/lucide/folder')['default']
     IconLucideFolderPlus: typeof import('~icons/lucide/folder-plus')['default']

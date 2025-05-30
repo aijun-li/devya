@@ -50,3 +50,4 @@ sea-orm = { version = "1.1.0", features = [
 migration = { path = "migration" }
 db-service = { path = "db-service" }
 entity = { path = "entity" }
+tauri-plugin-dialog = "2"

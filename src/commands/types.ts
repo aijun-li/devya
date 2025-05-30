@@ -1,14 +1,16 @@
-export type RuleDir = {
+export type RuleFile = {
   id: number;
   name: string;
+  isDir: boolean;
   parentId?: number;
   createdAt: number;
   updatedAt: number;
-  dirs: RuleDir[];
+  children: RuleFile[];
 };
 
-export type UpsertRuleDirReq = {
+export type UpsertRuleFileReq = {
   id?: number;
   name: string;
+  isDir: boolean;
   parentId?: number;
 };

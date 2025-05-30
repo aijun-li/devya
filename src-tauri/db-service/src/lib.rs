@@ -1,5 +1,5 @@
-mod rule_dir;
+mod rule_file;
 
-pub use rule_dir::*;
+pub use rule_file::*;
 
 pub use sea_orm;
