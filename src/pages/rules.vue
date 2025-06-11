@@ -11,8 +11,8 @@ import { Splitter } from 'primevue';
     </SplitterPanel>
 
     <SplitterPanel :size="70" :min-size="60">
-      <PanelCard class="p-2">
-        <div>213</div>
+      <PanelCard class="px-1 py-2">
+        <RuleEditor />
       </PanelCard>
     </SplitterPanel>
   </Splitter>

@@ -33,6 +33,7 @@ declare module 'vue' {
     Popover: typeof import('primevue/popover')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    RuleEditor: typeof import('./src/components/RuleEditor.vue')['default']
     RuleFileTree: typeof import('./src/components/RuleFileTree.vue')['default']
     Sidebar: typeof import('./src/components/Sidebar.vue')['default']
     Splitter: typeof import('primevue/splitter')['default']
