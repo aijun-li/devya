@@ -7,6 +7,10 @@ import { MenuItem } from 'primevue/menuitem';
 import { TreeNode } from 'primevue/treenode';
 import { computed, useTemplateRef, ref, nextTick, reactive } from 'vue';
 
+const emit = defineEmits<{
+  fileSelect: [id: number];
+}>();
+
 const { data: files, refetch } = useQuery({
   queryKey: [getRuleFiles.name],
   queryFn: getRuleFiles,
@@ -62,11 +66,14 @@ function onCreateFileStart(isDir: boolean, parentId?: number) {
   });
   if (menuActiveFile.id && menuActiveFile.isDir) {
     expandedKeys.value[menuActiveFile.id] = true;
+  } else if (selectedNode.value?.isDir) {
+    expandedKeys.value[selectedNode.value.id] = true;
   }
   focusCreateInput();
 }
 
 function onTopCreateFileClick(isDir: boolean) {
+  console.log('top', selectedNode.value);
   if (!selectedNode.value) {
     onCreateFileStart(isDir);
   } else if (selectedNode.value.isDir) {
@@ -146,6 +153,10 @@ const nodes = computed<TreeNode[]>(() => {
 function onNodeSelect(node: TreeNode) {
   expandedKeys.value[node.key] = !expandedKeys.value[node.key];
   selectedNode.value = node;
+
+  if (!node.isDir) {
+    emit('fileSelect', node.id);
+  }
 }
 
 function onNodeUnselect(node: TreeNode) {

@@ -1,6 +1,6 @@
 use std::{cmp::Ordering, collections::HashMap};
 
-use db_service::{self, RuleFileMutation, RuleFileQuery};
+use db_service::{self, RuleFileMutation, RuleFileNoContent, RuleFileQuery};
 use serde::Serialize;
 use tauri::State;
 
@@ -10,7 +10,7 @@ use crate::state::DbState;
 #[serde(rename_all = "camelCase")]
 pub struct RuleFileNode {
     #[serde(flatten)]
-    rule_file: entity::rule_file::Model,
+    rule_file: RuleFileNoContent,
     children: Vec<RuleFileNode>,
 }
 
@@ -90,6 +90,25 @@ pub async fn upsert_rule_file(
 #[tauri::command]
 pub async fn delete_rule_file(id: i32, db_state: State<'_, DbState>) -> Result<(), String> {
     RuleFileMutation::delete(&db_state.conn, id)
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn get_rule_content(id: i32, db_state: State<'_, DbState>) -> Result<String, String> {
+    RuleFileQuery::find_content_by_id(&db_state.conn, id)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn update_rule_content(
+    id: i32,
+    content: String,
+    db_state: State<'_, DbState>,
+) -> Result<(), String> {
+    RuleFileMutation::update_content_by_id(&db_state.conn, id, content)
         .await
         .map_err(|e| e.to_string())?;
     Ok(())

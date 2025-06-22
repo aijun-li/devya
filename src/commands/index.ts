@@ -1,5 +1,5 @@
 import { Channel, invoke } from '@tauri-apps/api/core';
-import { RuleFile, UpsertRuleFileReq } from './types';
+import { RuleFile, UpdateRuleContentReq, UpsertRuleFileReq } from './types';
 
 export async function checkCaInstalled() {
   const installed = await invoke<boolean>('check_ca_installed');
@@ -37,5 +37,15 @@ export async function upsertRuleFile(req: UpsertRuleFileReq) {
 
 export async function deleteRuleFile(id: number) {
   const result = await invoke('delete_rule_file', { id });
+  return result;
+}
+
+export async function getRuleContent(id: number) {
+  const result = await invoke<string>('get_rule_content', { id });
+  return result;
+}
+
+export async function updateRuleContent(req: UpdateRuleContentReq) {
+  const result = await invoke('update_rule_content', req);
   return result;
 }

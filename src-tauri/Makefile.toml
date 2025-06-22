@@ -19,3 +19,9 @@ args = [
     "-o",
     "entity/src",
 ]
+
+[tasks.migrate]
+condition = { profiles = ["development"] }
+install_crate = { crate_name = "sea-orm-cli", binary = "sea-orm-cli", test_arg = "--help" }
+command = "sea-orm-cli"
+args = ["migrate", "up"]

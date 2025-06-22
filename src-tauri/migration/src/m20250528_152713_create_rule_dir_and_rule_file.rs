@@ -15,6 +15,7 @@ impl MigrationTrait for Migration {
                     .col(string(RuleFile::Name))
                     .col(integer_null(RuleFile::ParentId))
                     .col(boolean(RuleFile::IsDir))
+                    .col(string_null(RuleFile::Content))
                     .col(timestamp(RuleFile::CreatedAt).default(Expr::current_timestamp()))
                     .col(timestamp(RuleFile::UpdatedAt).default(Expr::current_timestamp()))
                     .foreign_key(
@@ -44,6 +45,7 @@ enum RuleFile {
     Name,
     ParentId,
     IsDir,
+    Content,
     CreatedAt,
     UpdatedAt,
 }

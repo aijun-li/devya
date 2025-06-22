@@ -19,6 +19,7 @@
     "@tauri-apps/plugin-opener": "^2.2.7",
     "@tauri-apps/plugin-os": "~2.2.1",
     "@tauri-apps/plugin-store": "~2.2.0",
+    "@vueuse/core": "^13.4.0",
     "monaco-editor": "^0.52.2",
     "pinia": "^3.0.2",
     "primevue": "^4.3.4",

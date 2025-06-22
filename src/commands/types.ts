@@ -14,3 +14,9 @@ export type UpsertRuleFileReq = {
   isDir: boolean;
   parentId?: number;
 };
+
+
+export type UpdateRuleContentReq = {
+  id: number;
+  content: string;
+}

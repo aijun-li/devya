@@ -3,6 +3,8 @@ import * as monaco from 'monaco-editor';
 import { loader, VueMonacoEditor } from '@guolao/vue-monaco-editor';
 import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
 
+const model = defineModel<string>({ required: true, default: '' });
+
 self.MonacoEnvironment = {
   getWorker() {
     return new editorWorker();
@@ -33,5 +35,9 @@ const monacoOptions: monaco.editor.IStandaloneEditorConstructionOptions = {
 </script>
 
 <template>
-  <VueMonacoEditor language="rule" :options="monacoOptions" />
+  <VueMonacoEditor
+    v-model:value="model"
+    language="rule"
+    :options="monacoOptions"
+  />
 </template>

@@ -24,6 +24,7 @@ declare module 'vue' {
     IconLucideFilePlus: typeof import('~icons/lucide/file-plus')['default']
     IconLucideFolder: typeof import('~icons/lucide/folder')['default']
     IconLucideFolderPlus: typeof import('~icons/lucide/folder-plus')['default']
+    IconLucideMoveLeft: typeof import('~icons/lucide/move-left')['default']
     IconLucideTrash2: typeof import('~icons/lucide/trash2')['default']
     IconMdiHttps: typeof import('~icons/mdi/https')['default']
     InputNumber: typeof import('primevue/inputnumber')['default']

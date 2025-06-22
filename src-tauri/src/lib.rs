@@ -40,6 +40,8 @@ pub fn run() {
             commands::db::get_rule_files,
             commands::db::upsert_rule_file,
             commands::db::delete_rule_file,
+            commands::db::get_rule_content,
+            commands::db::update_rule_content,
         ])
         .setup(|app| {
             let conn = tauri::async_runtime::block_on(setup_db(app))?;
